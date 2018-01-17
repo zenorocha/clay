@@ -11567,7 +11567,7 @@ function $linkblocks(opt_data, opt_ignored, opt_ijData) {
               ie_open('a', null, null,
                   'class', 'mb-3',
                   'target', '_blank',
-                  'href', 'http://liferay.github.io/clay/');
+                  'href', 'https://lexiconcss.wedeploy.io/');
                 itext('Lexicon CSS');
               ie_close('a');
             ie_close('div');
