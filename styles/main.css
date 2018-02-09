@@ -7646,6 +7646,7 @@ label {
   background-clip: border-box;
   border-width: 1px;
   height: 2.5rem;
+  min-width: 0;
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
   padding-left: 1rem;
@@ -7766,6 +7767,12 @@ fieldset[disabled] .form-control, .form-control[disabled] {
   display: flex;
   flex-direction: column;
   margin-bottom: 1.5rem; }
+  @media (min-width: 576px) {
+    .form-group-autofit {
+      flex-direction: row;
+      width: 100%; } }
+  .form-group-autofit label {
+    align-self: flex-start; }
   .form-group-autofit .form-group-item {
     display: flex;
     flex-basis: auto;
@@ -7777,17 +7784,30 @@ fieldset[disabled] .form-control, .form-control[disabled] {
     width: 100%; }
     .form-group-autofit .form-group-item:not(:last-child) {
       margin-bottom: 1rem; }
-  .form-group-autofit .form-group-item-shrink {
-    flex-shrink: 0;
-    width: auto; }
-
-@media (min-width: 576px) {
-  .form-group-autofit {
-    flex-direction: row;
-    width: 100%; }
+  @media (min-width: 576px) {
     .form-group-autofit > .form-group-item:not(:last-child) {
       margin-bottom: 0;
       margin-right: 12px; } }
+  .form-group-autofit .form-group-item-shrink {
+    flex-shrink: 0;
+    max-width: 100%;
+    width: auto; }
+
+@media (max-width: 575.98px) {
+  .form-group-autofit .form-group-item-label:not(:last-child) {
+    margin-bottom: 0; } }
+
+@media (min-width: 576px) {
+  .form-group-item-label {
+    justify-content: center;
+    min-height: 2.5rem; }
+    .form-group-item-label > label {
+      margin-bottom: 0;
+      max-width: 12.5rem; } }
+
+@media (min-width: 576px) {
+  .form-group-item-label-spacer {
+    margin-top: 1.46875rem; } }
 
 .component-link {
   color: #6B6C7E; }
@@ -8190,6 +8210,10 @@ button.component-action {
   font-size: 0.8125rem;
   font-weight: 600; }
 
+.form-feedback-group {
+  width: 100%;
+  word-wrap: break-word; }
+
 .form-feedback-item {
   font-size: 0.8125rem;
   font-weight: 600;
@@ -8355,10 +8379,14 @@ a.collapse-icon {
 .input-group-item {
   display: flex;
   flex-grow: 1;
+  flex-wrap: wrap;
   margin-left: 0.5rem;
-  width: 1%; }
+  width: 1%;
+  word-wrap: break-word; }
   .input-group-item:first-child {
     margin-left: 0; }
+  .input-group-item > .btn {
+    align-self: flex-start; }
 
 .input-group-item-shrink {
   flex-grow: 0;
@@ -8395,11 +8423,6 @@ a.collapse-icon {
 .input-group-append {
   align-items: stretch;
   margin-left: -0.0625rem; }
-
-.input-group > .input-group-append:not(:last-child) > .form-control,
-.input-group > .input-group-append:last-child > .form-control:not(:last-child) {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0; }
 
 .input-group > .input-group-append > .form-control {
   border-top-left-radius: 0;
@@ -8441,7 +8464,9 @@ a.collapse-icon {
     border-color: #80abff; }
 
 .input-group-inset {
-  order: 5; }
+  flex-grow: 1;
+  order: 5;
+  width: 1%; }
   .input-group-inset[readonly] ~ .input-group-inset-item {
     background-color: #e7e7ed; }
   .input-group-inset:focus {
@@ -8452,6 +8477,8 @@ a.collapse-icon {
   .input-group-inset:disabled ~ .input-group-inset-item {
     background-color: #F1F2F5;
     border-color: #F1F2F5; }
+  .input-group-inset ~ .form-feedback-group {
+    order: 13; }
 
 .input-group-inset-item {
   align-items: center;
@@ -9670,6 +9697,11 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     flex-wrap: wrap;
     justify-content: space-between; }
 
+.navbar-nav .dropdown-menu-right,
+.navbar-form .dropdown-menu-right {
+  left: auto;
+  right: 0; }
+
 .navbar-nav {
   flex-direction: row; }
   .navbar-nav .dropdown-menu {
@@ -9685,6 +9717,9 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     margin-bottom: 0;
     margin-left: 0.5rem;
     margin-right: 0.5rem; }
+
+.navbar-nav-last {
+  margin-left: auto; }
 
 .navbar-title {
   font-size: 1.25rem;
@@ -10377,6 +10412,8 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
     margin-top: 0.5rem; }
+  .application-bar .navbar-nav .nav-btn-monospaced {
+    font-size: 1rem; }
   .application-bar .navbar-nav .nav-item > .custom-control,
   .application-bar .navbar-nav .nav-item > .form-check {
     margin-left: 0.25rem;
@@ -10392,6 +10429,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.25rem;
     padding-top: 0.34375rem; }
   .application-bar .navbar-nav .nav-link-monospaced {
+    font-size: 1rem;
     margin-bottom: 0.5rem;
     margin-left: 0.25rem;
     margin-right: 0.25rem;
@@ -10413,6 +10451,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .application-bar.navbar-expand-sm .navbar-form {
+      height: 3rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
@@ -10429,13 +10468,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 1.04688rem; }
     .application-bar.navbar-expand-sm .navbar-form {
+      height: 3.5rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem; }
+      .application-bar.navbar-expand-sm .navbar-form > .container,
+      .application-bar.navbar-expand-sm .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .application-bar.navbar-expand-sm .nav-btn {
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
       margin-top: 0.75rem; }
+    .application-bar.navbar-expand-sm .nav-btn-monospaced {
+      font-size: 1rem; }
     .application-bar.navbar-expand-sm .nav-item > .custom-control,
     .application-bar.navbar-expand-sm .nav-item > .form-check {
       margin-left: 0.25rem;
@@ -10451,6 +10497,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 0.34375rem; }
     .application-bar.navbar-expand-sm .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
@@ -10472,6 +10519,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .application-bar.navbar-expand-md .navbar-form {
+      height: 3rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
@@ -10488,13 +10536,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 1.04688rem; }
     .application-bar.navbar-expand-md .navbar-form {
+      height: 3.5rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem; }
+      .application-bar.navbar-expand-md .navbar-form > .container,
+      .application-bar.navbar-expand-md .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .application-bar.navbar-expand-md .nav-btn {
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
       margin-top: 0.75rem; }
+    .application-bar.navbar-expand-md .nav-btn-monospaced {
+      font-size: 1rem; }
     .application-bar.navbar-expand-md .nav-item > .custom-control,
     .application-bar.navbar-expand-md .nav-item > .form-check {
       margin-left: 0.25rem;
@@ -10510,6 +10565,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 0.34375rem; }
     .application-bar.navbar-expand-md .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
@@ -10531,6 +10587,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .application-bar.navbar-expand-lg .navbar-form {
+      height: 3rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
@@ -10547,13 +10604,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 1.04688rem; }
     .application-bar.navbar-expand-lg .navbar-form {
+      height: 3.5rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem; }
+      .application-bar.navbar-expand-lg .navbar-form > .container,
+      .application-bar.navbar-expand-lg .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .application-bar.navbar-expand-lg .nav-btn {
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
       margin-top: 0.75rem; }
+    .application-bar.navbar-expand-lg .nav-btn-monospaced {
+      font-size: 1rem; }
     .application-bar.navbar-expand-lg .nav-item > .custom-control,
     .application-bar.navbar-expand-lg .nav-item > .form-check {
       margin-left: 0.25rem;
@@ -10569,6 +10633,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 0.34375rem; }
     .application-bar.navbar-expand-lg .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
@@ -10590,6 +10655,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .application-bar.navbar-expand-xl .navbar-form {
+      height: 3rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem;
@@ -10606,13 +10672,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 1.04688rem; }
     .application-bar.navbar-expand-xl .navbar-form {
+      height: 3.5rem;
       padding-left: 0.25rem;
       padding-right: 0.25rem; }
+      .application-bar.navbar-expand-xl .navbar-form > .container,
+      .application-bar.navbar-expand-xl .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .application-bar.navbar-expand-xl .nav-btn {
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
       margin-top: 0.75rem; }
+    .application-bar.navbar-expand-xl .nav-btn-monospaced {
+      font-size: 1rem; }
     .application-bar.navbar-expand-xl .nav-item > .custom-control,
     .application-bar.navbar-expand-xl .nav-item > .form-check {
       margin-left: 0.25rem;
@@ -10628,6 +10701,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.25rem;
       padding-top: 0.34375rem; }
     .application-bar.navbar-expand-xl .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.75rem;
       margin-left: 0.25rem;
       margin-right: 0.25rem;
@@ -10641,13 +10715,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.25rem;
     padding-top: 1.04688rem; }
   .application-bar.navbar-expand .navbar-form {
+    height: 3.5rem;
     padding-left: 0.25rem;
     padding-right: 0.25rem; }
+    .application-bar.navbar-expand .navbar-form > .container,
+    .application-bar.navbar-expand .navbar-form > .container-fluid {
+      padding-left: 0;
+      padding-right: 0; }
   .application-bar.navbar-expand .nav-btn {
     margin-bottom: 0.75rem;
     margin-left: 0.25rem;
     margin-right: 0.25rem;
     margin-top: 0.75rem; }
+  .application-bar.navbar-expand .nav-btn-monospaced {
+    font-size: 1rem; }
   .application-bar.navbar-expand .nav-item > .custom-control,
   .application-bar.navbar-expand .nav-item > .form-check {
     margin-left: 0.25rem;
@@ -10663,6 +10744,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.25rem;
     padding-top: 0.34375rem; }
   .application-bar.navbar-expand .nav-link-monospaced {
+    font-size: 1rem;
     margin-bottom: 0.75rem;
     margin-left: 0.25rem;
     margin-right: 0.25rem;
@@ -10848,6 +10930,8 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     margin-left: 0.5rem;
     margin-right: 0.5rem;
     margin-top: 0.46875rem; }
+  .management-bar .navbar-nav .nav-btn-monospaced {
+    font-size: 1rem; }
   .management-bar .navbar-nav .nav-item > .custom-control,
   .management-bar .navbar-nav .nav-item > .form-check {
     margin-left: 0.5rem;
@@ -10863,6 +10947,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.5rem;
     padding-top: 0.34375rem; }
   .management-bar .navbar-nav .nav-link-monospaced {
+    font-size: 1rem;
     margin-bottom: 0.46875rem;
     margin-left: 0.5rem;
     margin-right: 0.5rem;
@@ -10886,6 +10971,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .management-bar.navbar-expand-sm .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
@@ -10903,13 +10989,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 1.26562rem; }
     .management-bar.navbar-expand-sm .navbar-form {
+      height: 3.9375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem; }
+      .management-bar.navbar-expand-sm .navbar-form > .container,
+      .management-bar.navbar-expand-sm .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .management-bar.navbar-expand-sm .nav-btn {
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
       margin-top: 0.96875rem; }
+    .management-bar.navbar-expand-sm .nav-btn-monospaced {
+      font-size: 1rem; }
     .management-bar.navbar-expand-sm .nav-item > .custom-control,
     .management-bar.navbar-expand-sm .nav-item > .form-check {
       margin-left: 0.5rem;
@@ -10925,6 +11018,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 0.34375rem; }
     .management-bar.navbar-expand-sm .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
@@ -10946,6 +11040,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .management-bar.navbar-expand-md .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
@@ -10963,13 +11058,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 1.26562rem; }
     .management-bar.navbar-expand-md .navbar-form {
+      height: 3.9375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem; }
+      .management-bar.navbar-expand-md .navbar-form > .container,
+      .management-bar.navbar-expand-md .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .management-bar.navbar-expand-md .nav-btn {
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
       margin-top: 0.96875rem; }
+    .management-bar.navbar-expand-md .nav-btn-monospaced {
+      font-size: 1rem; }
     .management-bar.navbar-expand-md .nav-item > .custom-control,
     .management-bar.navbar-expand-md .nav-item > .form-check {
       margin-left: 0.5rem;
@@ -10985,6 +11087,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 0.34375rem; }
     .management-bar.navbar-expand-md .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
@@ -11006,6 +11109,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .management-bar.navbar-expand-lg .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
@@ -11023,13 +11127,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 1.26562rem; }
     .management-bar.navbar-expand-lg .navbar-form {
+      height: 3.9375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem; }
+      .management-bar.navbar-expand-lg .navbar-form > .container,
+      .management-bar.navbar-expand-lg .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .management-bar.navbar-expand-lg .nav-btn {
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
       margin-top: 0.96875rem; }
+    .management-bar.navbar-expand-lg .nav-btn-monospaced {
+      font-size: 1rem; }
     .management-bar.navbar-expand-lg .nav-item > .custom-control,
     .management-bar.navbar-expand-lg .nav-item > .form-check {
       margin-left: 0.5rem;
@@ -11045,6 +11156,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 0.34375rem; }
     .management-bar.navbar-expand-lg .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
@@ -11066,6 +11178,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       margin-left: 0;
       margin-right: 0; }
     .management-bar.navbar-expand-xl .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.34375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
@@ -11083,13 +11196,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 1.26562rem; }
     .management-bar.navbar-expand-xl .navbar-form {
+      height: 3.9375rem;
       padding-left: 0.5rem;
       padding-right: 0.5rem; }
+      .management-bar.navbar-expand-xl .navbar-form > .container,
+      .management-bar.navbar-expand-xl .navbar-form > .container-fluid {
+        padding-left: 0;
+        padding-right: 0; }
     .management-bar.navbar-expand-xl .nav-btn {
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
       margin-top: 0.96875rem; }
+    .management-bar.navbar-expand-xl .nav-btn-monospaced {
+      font-size: 1rem; }
     .management-bar.navbar-expand-xl .nav-item > .custom-control,
     .management-bar.navbar-expand-xl .nav-item > .form-check {
       margin-left: 0.5rem;
@@ -11105,6 +11225,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
       padding-right: 0.5rem;
       padding-top: 0.34375rem; }
     .management-bar.navbar-expand-xl .nav-link-monospaced {
+      font-size: 1rem;
       margin-bottom: 0.96875rem;
       margin-left: 0.5rem;
       margin-right: 0.5rem;
@@ -11118,13 +11239,20 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.5rem;
     padding-top: 1.26562rem; }
   .management-bar.navbar-expand .navbar-form {
+    height: 3.9375rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem; }
+    .management-bar.navbar-expand .navbar-form > .container,
+    .management-bar.navbar-expand .navbar-form > .container-fluid {
+      padding-left: 0;
+      padding-right: 0; }
   .management-bar.navbar-expand .nav-btn {
     margin-bottom: 0.96875rem;
     margin-left: 0.5rem;
     margin-right: 0.5rem;
     margin-top: 0.96875rem; }
+  .management-bar.navbar-expand .nav-btn-monospaced {
+    font-size: 1rem; }
   .management-bar.navbar-expand .nav-item > .custom-control,
   .management-bar.navbar-expand .nav-item > .form-check {
     margin-left: 0.5rem;
@@ -11140,6 +11268,7 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     padding-right: 0.5rem;
     padding-top: 0.34375rem; }
   .management-bar.navbar-expand .nav-link-monospaced {
+    font-size: 1rem;
     margin-bottom: 0.96875rem;
     margin-left: 0.5rem;
     margin-right: 0.5rem;
@@ -11442,7 +11571,13 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     .navigation-bar.navbar-expand-sm .navbar-collapse .navbar-nav .dropdown-divider {
       margin-left: 0;
       margin-right: 0; }
+    .navigation-bar.navbar-expand-sm .navbar-collapse .navbar-nav .dropdown-item {
+      padding-bottom: 0.8125rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.8125rem; }
     .navigation-bar.navbar-expand-sm .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.8125rem;
       padding-left: 1rem;
       padding-right: 1rem;
@@ -11465,7 +11600,13 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     .navigation-bar.navbar-expand-md .navbar-collapse .navbar-nav .dropdown-divider {
       margin-left: 0;
       margin-right: 0; }
+    .navigation-bar.navbar-expand-md .navbar-collapse .navbar-nav .dropdown-item {
+      padding-bottom: 0.8125rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.8125rem; }
     .navigation-bar.navbar-expand-md .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.8125rem;
       padding-left: 1rem;
       padding-right: 1rem;
@@ -11488,7 +11629,13 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     .navigation-bar.navbar-expand-lg .navbar-collapse .navbar-nav .dropdown-divider {
       margin-left: 0;
       margin-right: 0; }
+    .navigation-bar.navbar-expand-lg .navbar-collapse .navbar-nav .dropdown-item {
+      padding-bottom: 0.8125rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.8125rem; }
     .navigation-bar.navbar-expand-lg .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.8125rem;
       padding-left: 1rem;
       padding-right: 1rem;
@@ -11511,7 +11658,13 @@ a.multi-step-icon:hover, a.multi-step-icon:focus {
     .navigation-bar.navbar-expand-xl .navbar-collapse .navbar-nav .dropdown-divider {
       margin-left: 0;
       margin-right: 0; }
+    .navigation-bar.navbar-expand-xl .navbar-collapse .navbar-nav .dropdown-item {
+      padding-bottom: 0.8125rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-top: 0.8125rem; }
     .navigation-bar.navbar-expand-xl .navbar-form {
+      height: 2.9375rem;
       padding-bottom: 0.8125rem;
       padding-left: 1rem;
       padding-right: 1rem;
@@ -12807,7 +12960,7 @@ th {
 
 .table-title {
   color: #272833;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.5;
   margin-bottom: 0; }
@@ -12824,6 +12977,7 @@ th {
 
 .table-action-link {
   align-items: center;
+  border-radius: 0.25rem;
   color: #6B6C7E;
   display: inline-flex;
   font-size: 1rem;
@@ -12835,6 +12989,8 @@ th {
     background-color: rgba(0, 0, 0, 0.02);
     color: #272833;
     text-decoration: none; }
+  .show > .table-action-link, .table-action-link:active, .table-action-link.active {
+    background-color: rgba(0, 0, 0, 0.04); }
   .table-action-link .lexicon-icon {
     margin-top: 0; }
 
@@ -12934,7 +13090,7 @@ th {
 
 .table-list-title {
   color: #272833;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25;
   margin-bottom: 0; }
