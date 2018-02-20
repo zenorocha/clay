@@ -452,6 +452,15 @@ ClayIcon.STATE = {
   elementClasses: _metalState.Config.string(),
 
   /**
+   * Flag to indicate if the svg is focusable or not
+   * @instance
+   * @memberof ClayIcon
+   * @type {?bool}
+   * @default false
+   */
+  focusable: _metalState.Config.bool().value(false),
+
+  /**
    * Id to be applied to the element.
    * @instance
    * @memberof ClayIcon
@@ -3135,13 +3144,13 @@ var ClayLabel = function (_Component) {
   }
 
   _createClass(ClayLabel, [{
-    key: 'handleCloseButtonClick_',
+    key: '_handleCloseButtonClick',
 
     /**
      * Handle `click` button and emit event `close`.
      * @protected
      */
-    value: function handleCloseButtonClick_() {
+    value: function _handleCloseButtonClick() {
       this.emit('close');
     }
   }]);
@@ -5148,7 +5157,7 @@ var ClayAlertBase = function (_Component) {
    * @inheritDoc
    */
 		value: function attached() {
-			this.addListener('hide', this.defaultHideAlert_, true);
+			this.addListener('hide', this._defaultHideAlert, true);
 		}
 
 		/**
@@ -5159,11 +5168,11 @@ var ClayAlertBase = function (_Component) {
 		key: 'rendered',
 		value: function rendered() {
 			if (this.autoClose && (this.type === 'stripe' || this.type === 'toast')) {
-				if (this.delayTime_ === undefined || this.delayTime_ > 0) {
-					this.delayTime_ = (this.element.querySelector('a') ? 10 : 5) * 1000;
+				if (this._delayTime === undefined || this._delayTime > 0) {
+					this._delayTime = (this.element.querySelector('a') ? 10 : 5) * 1000;
 				}
 
-				this.resumeTimeout_();
+				this._resumeTimeout();
 			}
 		}
 
@@ -5174,12 +5183,12 @@ var ClayAlertBase = function (_Component) {
 	}, {
 		key: 'disposed',
 		value: function disposed() {
-			if (this.timer_) {
-				clearTimeout(this.timer_);
-				this.timer_ = undefined;
+			if (this._timer) {
+				clearTimeout(this._timer);
+				this._timer = undefined;
 			}
-			this.delayTime_ = undefined;
-			this.startDelayTime_ = undefined;
+			this._delayTime = undefined;
+			this._startDelayTime = undefined;
 		}
 
 		/**
@@ -5188,17 +5197,83 @@ var ClayAlertBase = function (_Component) {
    */
 
 	}, {
-		key: 'defaultHideAlert_',
-		value: function defaultHideAlert_() {
-			this.delayTime_ = 0;
-			this.visible_ = false;
+		key: '_defaultHideAlert',
+		value: function _defaultHideAlert() {
+			this._delayTime = 0;
+			this._visible = false;
 
-			if (this.timer_) {
-				clearTimeout(this.timer_);
+			if (this._timer) {
+				clearTimeout(this._timer);
 			}
 
 			if (this.destroyOnHide) {
 				this.dispose();
+			}
+		}
+
+		/**
+   * Handles onclick event for the close button in case of closeable alert.
+   * @private
+   */
+
+	}, {
+		key: '_handleCloseClick',
+		value: function _handleCloseClick() {
+			this.close();
+		}
+
+		/**
+   * Handles mouseot event for the alert.
+   * @private
+   */
+
+	}, {
+		key: '_handleMouseOut',
+		value: function _handleMouseOut() {
+			this._resumeTimeout();
+		}
+
+		/**
+   * Handles mouseover event for the alert.
+   * @private
+   */
+
+	}, {
+		key: '_handleMouseOver',
+		value: function _handleMouseOver() {
+			this._pauseTimeout();
+		}
+
+		/**
+   * Pauses the closing delay time.
+   * @private
+   */
+
+	}, {
+		key: '_pauseTimeout',
+		value: function _pauseTimeout() {
+			if (this._timer) {
+				clearTimeout(this._timer);
+				this._timer = undefined;
+				this._delayTime -= new Date() - this._startDelayTime;
+			}
+		}
+
+		/**
+   * Resumes the closing delay time.
+   * @private
+   */
+
+	}, {
+		key: '_resumeTimeout',
+		value: function _resumeTimeout() {
+			var _this2 = this;
+
+			if (this._delayTime > 0) {
+				this._startDelayTime = new Date();
+				this._timer = setTimeout(function () {
+					_this2.close();
+				}, this._delayTime);
 			}
 		}
 
@@ -5212,72 +5287,6 @@ var ClayAlertBase = function (_Component) {
 		value: function close() {
 			this.emit('hide');
 		}
-
-		/**
-   * Handles onclick event for the close button in case of closeable alert.
-   * @private
-   */
-
-	}, {
-		key: 'handleCloseClick_',
-		value: function handleCloseClick_() {
-			this.close();
-		}
-
-		/**
-   * Handles mouseot event for the alert.
-   * @private
-   */
-
-	}, {
-		key: 'handleMouseOut_',
-		value: function handleMouseOut_() {
-			this.resumeTimeout_();
-		}
-
-		/**
-   * Handles mouseover event for the alert.
-   * @private
-   */
-
-	}, {
-		key: 'handleMouseOver_',
-		value: function handleMouseOver_() {
-			this.pauseTimeout_();
-		}
-
-		/**
-   * Pauses the closing delay time.
-   * @private
-   */
-
-	}, {
-		key: 'pauseTimeout_',
-		value: function pauseTimeout_() {
-			if (this.timer_) {
-				clearTimeout(this.timer_);
-				this.timer_ = undefined;
-				this.delayTime_ -= new Date() - this.startDelayTime_;
-			}
-		}
-
-		/**
-   * Resumes the closing delay time.
-   * @private
-   */
-
-	}, {
-		key: 'resumeTimeout_',
-		value: function resumeTimeout_() {
-			var _this2 = this;
-
-			if (this.delayTime_ > 0) {
-				this.startDelayTime_ = new Date();
-				this.timer_ = setTimeout(function () {
-					_this2.close();
-				}, this.delayTime_);
-			}
-		}
 	}]);
 
 	return ClayAlertBase;
@@ -5290,6 +5299,15 @@ var ClayAlertBase = function (_Component) {
  */
 
 ClayAlertBase.STATE = {
+	/**
+  * Flag to indicate the visibility of the alert
+  * @instance
+  * @memberof ClayAlertBase
+  * @type {?bool}
+  * @default true
+  */
+	_visible: _metalState.Config.bool().internal().value(true),
+
 	/**
   * Flag to indicate if alert should be automatically closed.
   * @instance
@@ -5377,16 +5395,7 @@ ClayAlertBase.STATE = {
   * @type {?string}
   * @default embedded
   */
-	type: _metalState.Config.oneOf(['embedded', 'stripe', 'toast']).value('embedded'),
-
-	/**
-  * Flag to indicate the visibility of the alert
-  * @instance
-  * @memberof ClayAlertBase
-  * @type {?bool}
-  * @default true
-  */
-	visible_: _metalState.Config.bool().internal().value(true)
+	type: _metalState.Config.oneOf(['embedded', 'stripe', 'toast']).value('embedded')
 };
 
 (0, _metalWebComponent2.default)('clay-alert-base', ClayAlertBase);
@@ -5490,14 +5499,14 @@ var ClayCardBase = function (_Component) {
   }
 
   _createClass(ClayCardBase, [{
-    key: 'handleItemCheckboxClick_',
+    key: '_handleItemCheckboxClick',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemCheckboxClick_(event) {
+    value: function _handleItemCheckboxClick(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -8584,7 +8593,7 @@ var ClayDropdownBase = function (_Component) {
    * @inheritDoc
    */
 		value: function attached() {
-			this.refs.portal.on('rendered', this.handleRenderedPortal_.bind(this));
+			this.refs.portal.on('rendered', this._handleRenderedPortal.bind(this));
 		}
 
 		/**
@@ -8594,30 +8603,9 @@ var ClayDropdownBase = function (_Component) {
 	}, {
 		key: 'created',
 		value: function created() {
-			this.eventHandler_ = new _metalEvents.EventHandler();
+			this._eventHandler = new _metalEvents.EventHandler();
 
-			this.eventHandler_.add(_metalDom2.default.on(document, 'click', this.handleDocClick_.bind(this)));
-		}
-
-		/**
-   * @inheritDoc
-   */
-
-	}, {
-		key: 'disposed',
-		value: function disposed() {
-			this.eventHandler_.removeAllListeners();
-		}
-
-		/**
-   * Closes the dropdown.
-   * @protected
-   */
-
-	}, {
-		key: 'close_',
-		value: function close_() {
-			this.expanded = false;
+			this._eventHandler.add(_metalDom2.default.on(document, 'click', this._handleDocClick.bind(this)));
 		}
 
 		/**
@@ -8627,7 +8615,28 @@ var ClayDropdownBase = function (_Component) {
 	}, {
 		key: 'detached',
 		value: function detached() {
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
+		}
+
+		/**
+   * @inheritDoc
+   */
+
+	}, {
+		key: 'disposed',
+		value: function disposed() {
+			this._eventHandler.removeAllListeners();
+		}
+
+		/**
+   * Closes the dropdown.
+   * @protected
+   */
+
+	}, {
+		key: '_close',
+		value: function _close() {
+			this.expanded = false;
 		}
 
 		/**
@@ -8637,12 +8646,12 @@ var ClayDropdownBase = function (_Component) {
    */
 
 	}, {
-		key: 'handleDocClick_',
-		value: function handleDocClick_(event) {
+		key: '_handleDocClick',
+		value: function _handleDocClick(event) {
 			if (this.element.contains(event.target) || this.refs.portal && this.refs.portal.element.contains(event.target)) {
 				return;
 			}
-			this.close_();
+			this._close();
 		}
 
 		/**
@@ -8652,8 +8661,8 @@ var ClayDropdownBase = function (_Component) {
    */
 
 	}, {
-		key: 'handleButtonClick_',
-		value: function handleButtonClick_(event) {
+		key: '_handleButtonClick',
+		value: function _handleButtonClick(event) {
 			this.emit('buttonClicked', event);
 		}
 
@@ -8664,8 +8673,8 @@ var ClayDropdownBase = function (_Component) {
    */
 
 	}, {
-		key: 'handleItemClick_',
-		value: function handleItemClick_(event) {
+		key: '_handleItemClick',
+		value: function _handleItemClick(event) {
 			this.emit('itemClicked', event);
 		}
 
@@ -8675,14 +8684,14 @@ var ClayDropdownBase = function (_Component) {
    */
 
 	}, {
-		key: 'handleRenderedPortal_',
-		value: function handleRenderedPortal_() {
-			if (this.expanded && this.alignElementSelector_) {
-				var alignElement = this.element.querySelector(this.alignElementSelector_);
+		key: '_handleRenderedPortal',
+		value: function _handleRenderedPortal() {
+			if (this.expanded && this._alignElementSelector) {
+				var alignElement = this.element.querySelector(this._alignElementSelector);
 				if (alignElement) {
 					var bodyElement = this.refs.portal.refs.menu;
 
-					this.alignedPosition_ = _metalPosition.Align.align(bodyElement, alignElement, _metalPosition.Align.BottomLeft);
+					this._alignedPosition = _metalPosition.Align.align(bodyElement, alignElement, _metalPosition.Align.BottomLeft);
 				}
 			}
 		}
@@ -8694,21 +8703,21 @@ var ClayDropdownBase = function (_Component) {
    */
 
 	}, {
-		key: 'handleSearch_',
-		value: function handleSearch_(event) {
+		key: '_handleSearch',
+		value: function _handleSearch(event) {
 			var searchValue = event.delegateTarget.value.toLowerCase();
 
-			if (!this.originalItems_) {
-				this.originalItems_ = this.items;
+			if (!this._originalItems) {
+				this._originalItems = this.items;
 			}
 
-			this.items = this.originalItems_.filter(function (item) {
+			this.items = this._originalItems.filter(function (item) {
 				if (item.items) {
-					if (!item.originalItems_) {
-						item.originalItems_ = item.items;
+					if (!item._originalItems) {
+						item._originalItems = item.items;
 					}
 
-					item.items = item.originalItems_.filter(function (nestedItem) {
+					item.items = item._originalItems.filter(function (nestedItem) {
 						return nestedItem.label && nestedItem.type !== 'group' && nestedItem.type !== 'header' && nestedItem.type !== 'separator' && nestedItem.label.toLowerCase().indexOf(searchValue) !== -1;
 					});
 
@@ -8719,7 +8728,7 @@ var ClayDropdownBase = function (_Component) {
 			});
 
 			this.emit('itemsFiltered', {
-				originalItems: this.originalItems_,
+				originalItems: this._originalItems,
 				filteredItems: this.items
 			});
 		}
@@ -8756,7 +8765,7 @@ ClayDropdownBase.STATE = {
   * @type {number}
   * @default Align.isValidPosition
   */
-	alignedPosition_: _metalState.Config.validator(_metalPosition.Align.isValidPosition).internal(),
+	_alignedPosition: _metalState.Config.validator(_metalPosition.Align.isValidPosition).internal(),
 
 	/**
   * Element selector used to position dropdown according to trigger position.
@@ -8765,7 +8774,7 @@ ClayDropdownBase.STATE = {
   * @type {?string}
   * @default .dropdown-toggle
   */
-	alignElementSelector_: _metalState.Config.string().value('.dropdown-toggle').internal(),
+	_alignElementSelector: _metalState.Config.string().value('.dropdown-toggle').internal(),
 
 	/**
   * Button configuration to place a button at dropdown footer.
@@ -9040,14 +9049,14 @@ var ClayCardGrid = function (_Component) {
   }
 
   _createClass(ClayCardGrid, [{
-    key: 'handleItemToggled_',
+    key: '_handleItemToggled',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemToggled_(event) {
+    value: function _handleItemToggled(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -9280,14 +9289,14 @@ var ClayList = function (_Component) {
   }
 
   _createClass(ClayList, [{
-    key: 'handleItemToggled_',
+    key: '_handleItemToggled',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemToggled_(event) {
+    value: function _handleItemToggled(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -9926,7 +9935,7 @@ var ClayTable = function (_Component) {
    * @inheritDoc
    */
 		value: function attached() {
-			this.eventHandler_.add(_metalDom2.default.on(document, 'click', this.handleDocClick_.bind(this)), _metalDom2.default.delegate(this.element, 'focus', 'tr', this.handleRowFocus_.bind(this)));
+			this._eventHandler.add(_metalDom2.default.on(document, 'click', this._handleDocClick.bind(this)), _metalDom2.default.delegate(this.element, 'focus', 'tr', this._handleRowFocus.bind(this)));
 		}
 
 		/**
@@ -9936,7 +9945,7 @@ var ClayTable = function (_Component) {
 	}, {
 		key: 'created',
 		value: function created() {
-			this.eventHandler_ = new _metalEvents.EventHandler();
+			this._eventHandler = new _metalEvents.EventHandler();
 		}
 
 		/**
@@ -9947,7 +9956,7 @@ var ClayTable = function (_Component) {
 		key: 'detached',
 		value: function detached() {
 			_get(ClayTable.prototype.__proto__ || Object.getPrototypeOf(ClayTable.prototype), 'detached', this).call(this);
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
 		}
 
 		/**
@@ -9957,8 +9966,8 @@ var ClayTable = function (_Component) {
    */
 
 	}, {
-		key: 'handleCellContentClick_',
-		value: function handleCellContentClick_(event) {
+		key: '_handleCellContentClick',
+		value: function _handleCellContentClick(event) {
 			this.emit('cellContentClicked', event);
 		}
 
@@ -9969,8 +9978,8 @@ var ClayTable = function (_Component) {
    */
 
 	}, {
-		key: 'handleDocClick_',
-		value: function handleDocClick_() {
+		key: '_handleDocClick',
+		value: function _handleDocClick() {
 			_metalDom2.default.removeClasses(this.element.querySelectorAll('tr'), 'table-focus');
 		}
 
@@ -9981,8 +9990,8 @@ var ClayTable = function (_Component) {
    */
 
 	}, {
-		key: 'handleItemToggled_',
-		value: function handleItemToggled_(event) {
+		key: '_handleItemToggled',
+		value: function _handleItemToggled(event) {
 			this.emit('itemToggled', event);
 		}
 
@@ -9994,8 +10003,8 @@ var ClayTable = function (_Component) {
    */
 
 	}, {
-		key: 'handleRowFocus_',
-		value: function handleRowFocus_(event) {
+		key: '_handleRowFocus',
+		value: function _handleRowFocus(event) {
 			_metalDom2.default.removeClasses(this.element.querySelector('.table-focus'), 'table-focus');
 			_metalDom2.default.addClasses(_metalDom2.default.closest(event.target, 'tr'), 'table-focus');
 		}
@@ -10007,8 +10016,8 @@ var ClayTable = function (_Component) {
    */
 
 	}, {
-		key: 'handleSortingClick_',
-		value: function handleSortingClick_(event) {
+		key: '_handleSortingClick',
+		value: function _handleSortingClick(event) {
 			this.emit('sortingButtonClicked', event);
 		}
 	}]);
@@ -15653,19 +15662,19 @@ var ChartBase = {
   * @inheritDoc
   */
 	attached: function attached() {
-		var config = this.constructChartConfig_();
+		var config = this._constructChartConfig();
 
 		this.bbChart = _billboard.bb.generate(config);
 
-		this.on('columnsChanged', this.handleColumnsChanged_.bind(this));
-		this.on('groupsChanged', this.handleGroupsChanged_.bind(this));
-		this.on('loading_Changed', this.handleLoadingChanged_.bind(this));
-		this.on('regionsChanged', this.handleRegionsChanged_.bind(this));
-		this.on('sizeChanged', this.handleSizeChanged_.bind(this));
-		this.on('typeChanged', this.handleTypeChanged_.bind(this));
-		this.on('xChanged', this.handleXChanged_.bind(this));
+		this.on('columnsChanged', this._handleColumnsChanged.bind(this));
+		this.on('groupsChanged', this._handleGroupsChanged.bind(this));
+		this.on('_loadingChanged', this._handleLoadingChanged.bind(this));
+		this.on('regionsChanged', this._handleRegionsChanged.bind(this));
+		this.on('sizeChanged', this._handleSizeChanged.bind(this));
+		this.on('typeChanged', this._handleTypeChanged.bind(this));
+		this.on('xChanged', this._handleXChanged.bind(this));
 
-		this.loading_ = false;
+		this._loading = false;
 	},
 
 	/**
@@ -15680,8 +15689,8 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructAxisConfig_: function constructAxisConfig_() {
-		var state = this.getStateObj_();
+	_constructAxisConfig: function _constructAxisConfig() {
+		var state = this._getStateObj();
 
 		return {
 			rotated: state.axisRotated,
@@ -15696,13 +15705,13 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructChartConfig_: function constructChartConfig_() {
-		var state = this.getStateObj_();
+	_constructChartConfig: function _constructChartConfig() {
+		var state = this._getStateObj();
 
-		var axis = this.constructAxisConfig_();
-		var data = this.constructDataConfig_();
-		var zoom = this.constructZoomConfig_();
-		var color = this.constructTilesConfig_();
+		var axis = this._constructAxisConfig();
+		var data = this._constructDataConfig();
+		var zoom = this._constructZoomConfig();
+		var color = this._constructTilesConfig();
 
 		var config = {
 			area: state.area,
@@ -15735,37 +15744,37 @@ var ChartBase = {
    * @event chartInit
    * @memberof ChartBase
    */
-		config.oninit = this.emitChartEvent_.bind(this, 'chartInit');
+		config.oninit = this._emitChartEvent.bind(this, 'chartInit');
 		/**
    * Chart mouse out event.
    * @event chartMouseout
    * @memberof ChartBase
    */
-		config.onout = this.emitChartEvent_.bind(this, 'chartMouseout');
+		config.onout = this._emitChartEvent.bind(this, 'chartMouseout');
 		/**
    * Chart mouse over event.
    * @event chartMouseover
    * @memberof ChartBase
    */
-		config.onover = this.emitChartEvent_.bind(this, 'chartMouseover');
+		config.onover = this._emitChartEvent.bind(this, 'chartMouseover');
 		/**
    * Chart rendered event.
    * @event chartRendered
    * @memberof ChartBase
    */
-		config.onrendered = this.emitChartEvent_.bind(this, 'chartRendered');
+		config.onrendered = this._emitChartEvent.bind(this, 'chartRendered');
 		/**
    * Chart resize event.
    * @event chartResize
    * @memberof ChartBase
    */
-		config.onresize = this.emitChartEvent_.bind(this, 'chartResize');
+		config.onresize = this._emitChartEvent.bind(this, 'chartResize');
 		/**
    * Chart resized event.
    * @event chartResized
    * @memberof ChartBase
    */
-		config.onresized = this.emitChartEvent_.bind(this, 'chartResized');
+		config.onresized = this._emitChartEvent.bind(this, 'chartResized');
 
 		return config;
 	},
@@ -15775,12 +15784,12 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructColumnsConfig_: function constructColumnsConfig_() {
-		var _getStateObj_ = this.getStateObj_(),
-		    columns = _getStateObj_.columns;
+	_constructColumnsConfig: function _constructColumnsConfig() {
+		var _getStateObj = this._getStateObj(),
+		    columns = _getStateObj.columns;
 
 		var config = {
-			columns: this.createColumnsArray_(columns)
+			columns: this._createColumnsArray(columns)
 		};
 
 		for (var i = 0; i < columns.length; i++) {
@@ -15821,10 +15830,10 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructColorsConfig_: function constructColorsConfig_() {
-		var _getStateObj_2 = this.getStateObj_(),
-		    colors = _getStateObj_2.colors,
-		    color = _getStateObj_2.color;
+	_constructColorsConfig: function _constructColorsConfig() {
+		var _getStateObj2 = this._getStateObj(),
+		    colors = _getStateObj2.colors,
+		    color = _getStateObj2.color;
 
 		if (color && color.tiles) {
 			colors = {};
@@ -15839,11 +15848,11 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructDataConfig_: function constructDataConfig_() {
+	_constructDataConfig: function _constructDataConfig() {
 		var attachListeners = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
 
-		var state = this.getStateObj_();
-		var colors = this.constructColorsConfig_();
+		var state = this._getStateObj();
+		var colors = this._constructColorsConfig();
 
 		var config = {
 			color: state.colorFormatter,
@@ -15867,7 +15876,7 @@ var ChartBase = {
 			xs: state.xs
 		};
 
-		var columnsConfig = this.constructColumnsConfig_();
+		var columnsConfig = this._constructColumnsConfig();
 
 		Object.assign(config, columnsConfig);
 
@@ -15877,31 +15886,31 @@ var ChartBase = {
     * @event pointClick
     * @memberof ChartBase
     */
-			config.onclick = this.emitChartEvent_.bind(this, 'pointClick');
+			config.onclick = this._emitChartEvent.bind(this, 'pointClick');
 			/**
     * Point mouse out event.
     * @event pointMouseout
     * @memberof ChartBase
     */
-			config.onout = this.emitChartEvent_.bind(this, 'pointMouseout');
+			config.onout = this._emitChartEvent.bind(this, 'pointMouseout');
 			/**
     * Point mouse over event.
     * @event pointMouseoever
     * @memberof ChartBase
     */
-			config.onover = this.emitChartEvent_.bind(this, 'pointMouseover');
+			config.onover = this._emitChartEvent.bind(this, 'pointMouseover');
 			/**
     * Data selected event.
     * @event dataSelected
     * @memberof ChartBase
     */
-			config.onselected = this.emitChartEvent_.bind(this, 'dataSelected');
+			config.onselected = this._emitChartEvent.bind(this, 'dataSelected');
 			/**
     * Data unselected event.
     * @event dataUnselected
     * @memberof ChartBase
     */
-			config.onunselected = this.emitChartEvent_.bind(this, 'dataUnselected');
+			config.onunselected = this._emitChartEvent.bind(this, 'dataUnselected');
 		}
 
 		return config;
@@ -15912,12 +15921,12 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructTilesConfig_: function constructTilesConfig_() {
-		var _getStateObj_3 = this.getStateObj_(),
-		    color = _getStateObj_3.color;
+	_constructTilesConfig: function _constructTilesConfig() {
+		var _getStateObj3 = this._getStateObj(),
+		    color = _getStateObj3.color;
 
 		if (color.tiles) {
-			var tiles = this.getTiles_();
+			var tiles = this._getTiles();
 
 			color.tiles = function () {
 				return tiles;
@@ -15933,8 +15942,8 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	constructZoomConfig_: function constructZoomConfig_() {
-		var state = this.getStateObj_();
+	_constructZoomConfig: function _constructZoomConfig() {
+		var state = this._getStateObj();
 
 		var zoom = state.zoom;
 
@@ -15945,19 +15954,19 @@ var ChartBase = {
    * @event zoom
    * @memberof ChartBase
    */
-		config.onzoom = this.emitChartEvent_.bind(this, 'zoom');
+		config.onzoom = this._emitChartEvent.bind(this, 'zoom');
 		/**
    * Zoom end event.
    * @event zoomEnd
    * @memberof ChartBase
    */
-		config.onzoomend = this.emitChartEvent_.bind(this, 'zoomEnd');
+		config.onzoomend = this._emitChartEvent.bind(this, 'zoomEnd');
 		/**
    * Zoom start event.
    * @event zoomStart
    * @memberof ChartBase
    */
-		config.onzoomstart = this.emitChartEvent_.bind(this, 'zoomStart');
+		config.onzoomstart = this._emitChartEvent.bind(this, 'zoomStart');
 
 		return config;
 	},
@@ -15968,7 +15977,7 @@ var ChartBase = {
   * @return {Array}
   * @protected
   */
-	createColumnsArray_: function createColumnsArray_(columns) {
+	_createColumnsArray: function _createColumnsArray(columns) {
 		return columns.map(function (_ref) {
 			var data = _ref.data,
 			    id = _ref.id;
@@ -15981,7 +15990,7 @@ var ChartBase = {
   * Emits event based on arguments array.
   * @protected
   */
-	emitChartEvent_: function emitChartEvent_() {
+	_emitChartEvent: function _emitChartEvent() {
 		this.emit.apply(this, arguments); // eslint-disable-line
 	},
 
@@ -15991,7 +16000,7 @@ var ChartBase = {
   * @return {?Object}
   * @protected
   */
-	getColumn_: function getColumn_(id) {
+	_getColumn: function _getColumn(id) {
 		return this.columns.find(function (column) {
 			return column.id === id;
 		});
@@ -16002,7 +16011,7 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	getStateObj_: function getStateObj_() {
+	_getStateObj: function _getStateObj() {
 		return this;
 	},
 
@@ -16011,7 +16020,7 @@ var ChartBase = {
   * @return {?Elements}
   * @protected
   */
-	getTiles_: function getTiles_() {
+	_getTiles: function _getTiles() {
 		return DEFAULT_TILES.filter(function (val) {
 			return document.querySelector('#' + val);
 		}).map(function (val) {
@@ -16023,15 +16032,15 @@ var ChartBase = {
   * Maps `columns` state to chart via `bb.load` method.
   * @protected
   */
-	handleColumnsChanged_: function handleColumnsChanged_(_ref2) {
+	_handleColumnsChanged: function _handleColumnsChanged(_ref2) {
 		var prevVal = _ref2.prevVal;
 
-		var data = this.constructDataConfig_(false);
+		var data = this._constructDataConfig(false);
 
 		var newVal = data.columns;
-		prevVal = this.createColumnsArray_(prevVal);
+		prevVal = this._createColumnsArray(prevVal);
 
-		var removedIds = this.resolveRemovedColumns_(newVal, prevVal);
+		var removedIds = this._resolveRemovedColumns(newVal, prevVal);
 
 		if (removedIds.length) {
 			data.unload = removedIds;
@@ -16040,7 +16049,7 @@ var ChartBase = {
 		this.bbChart.load(data);
 
 		if (data.xs) {
-			this.bbChart.xs(this.mapXSValues_(data.xs));
+			this.bbChart.xs(this._mapXSValues(data.xs));
 		}
 	},
 
@@ -16048,7 +16057,7 @@ var ChartBase = {
   * Maps `groups` state to chart via `bb.groups` method.
   * @protected
   */
-	handleGroupsChanged_: function handleGroupsChanged_(_ref3) {
+	_handleGroupsChanged: function _handleGroupsChanged(_ref3) {
 		var newVal = _ref3.newVal;
 
 		this.bbChart.groups(newVal);
@@ -16058,7 +16067,7 @@ var ChartBase = {
   * Handles `loading` state.
   * @protected
   */
-	handleLoadingChanged_: function handleLoadingChanged_(_ref4) {
+	_handleLoadingChanged: function _handleLoadingChanged(_ref4) {
 		var newVal = _ref4.newVal;
 
 		if (!newVal) {
@@ -16074,7 +16083,7 @@ var ChartBase = {
   * Maps `regions` state to chart via `bb.regions` method.
   * @protected
   */
-	handleRegionsChanged_: function handleRegionsChanged_(_ref5) {
+	_handleRegionsChanged: function _handleRegionsChanged(_ref5) {
 		var newVal = _ref5.newVal;
 
 		this.bbChart.regions(newVal);
@@ -16084,7 +16093,7 @@ var ChartBase = {
   * Maps `size` state to chart via `bb.resize` method.
   * @protected
   */
-	handleSizeChanged_: function handleSizeChanged_(_ref6) {
+	_handleSizeChanged: function _handleSizeChanged(_ref6) {
 		var newVal = _ref6.newVal;
 
 		this.bbChart.resize(newVal);
@@ -16094,7 +16103,7 @@ var ChartBase = {
   * Maps `type` state to chart via `bb.transform` method.
   * @protected
   */
-	handleTypeChanged_: function handleTypeChanged_(_ref7) {
+	_handleTypeChanged: function _handleTypeChanged(_ref7) {
 		var newVal = _ref7.newVal;
 
 		this.bbChart.transform(newVal);
@@ -16104,10 +16113,10 @@ var ChartBase = {
   * Maps `x` state to chart via `bb.x` method.
   * @protected
   */
-	handleXChanged_: function handleXChanged_(_ref8) {
+	_handleXChanged: function _handleXChanged(_ref8) {
 		var newVal = _ref8.newVal;
 
-		var column = this.getColumn_(newVal);
+		var column = this._getColumn(newVal);
 
 		this.bbChart.x(column.data);
 	},
@@ -16118,13 +16127,13 @@ var ChartBase = {
   * @return {Object}
   * @protected
   */
-	mapXSValues_: function mapXSValues_(xs) {
+	_mapXSValues: function _mapXSValues(xs) {
 		var _this = this;
 
 		return Object.keys(xs).reduce(function (xsValues, key) {
 			var value = xs[key];
 
-			var xColumn = _this.getColumn_(value);
+			var xColumn = _this._getColumn(value);
 
 			xsValues[key] = xColumn.data;
 
@@ -16139,7 +16148,7 @@ var ChartBase = {
   * @param {Array} prevColumns
   * @return {Array}
   */
-	resolveRemovedColumns_: function resolveRemovedColumns_(newColumns, prevColumns) {
+	_resolveRemovedColumns: function _resolveRemovedColumns(newColumns, prevColumns) {
 		var ids = newColumns.map(function (column) {
 			return column[0];
 		});
@@ -16162,6 +16171,11 @@ var ChartBase = {
  * @type {!Object}
  */
 ChartBase.STATE = {
+	/**
+  * Sets the `loading` state.
+  */
+	_loading: _metalState.Config.bool().internal().value(true),
+
 	/**
   * Data that will be rendered to the chart.
   * @instance
@@ -16567,11 +16581,6 @@ ChartBase.STATE = {
 	}).value({
 		classes: DEFAULT_LINE_CASSES
 	}),
-
-	/**
-  * Sets the `loading` state.
-  */
-	loading_: _metalState.Config.bool().internal().value(true),
 
 	/**
   * Sets billboard's data.mimeType config.
@@ -17923,20 +17932,20 @@ var ClayCollapse = function (_State) {
 
 		var _this = _possibleConstructorReturn(this, (ClayCollapse.__proto__ || Object.getPrototypeOf(ClayCollapse)).call(this, config));
 
-		_this.eventHandler_ = new _metalEvents.EventHandler();
+		_this._eventHandler = new _metalEvents.EventHandler();
 
-		var transitionEnd = _this.getTransitionEndEvent_();
+		var transitionEnd = _this._getTransitionEndEvent();
 
 		_this.supportsTransitionEnd = transitionEnd !== false;
 		_this.transitionEnd = transitionEnd || 'transitionend';
 
-		_this.on('headersChanged', _this.handleHeadersChanged_);
-		_this.syncHeaderListeners_();
+		_this.on('headersChanged', _this._handleHeadersChanged);
+		_this._syncHeaderListeners();
 
-		_this.on('collapsedChanged', _this.handleCollapsedChanged_);
+		_this.on('collapsedChanged', _this._handleCollapsedChanged);
 
 		if (_this.content) {
-			_this.collapsed ? _this.close_() : _this.open_();
+			_this.collapsed ? _this._close() : _this._open();
 		}
 		return _this;
 	}
@@ -17949,7 +17958,7 @@ var ClayCollapse = function (_State) {
 		key: 'disposeInternal',
 		value: function disposeInternal() {
 			_get(ClayCollapse.prototype.__proto__ || Object.getPrototypeOf(ClayCollapse.prototype), 'disposeInternal', this).call(this);
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
 		}
 
 		/**
@@ -17958,15 +17967,15 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'animateClose_',
-		value: function animateClose_() {
+		key: '_animateClose',
+		value: function _animateClose() {
 			var content = this.content,
 			    openClasses = this.openClasses,
 			    transitionClasses = this.transitionClasses;
 
 			content.transitionType = 0;
 
-			this.updateContentHeight_();
+			this._updateContentHeight();
 
 			_metalDom2.default.addClasses(content, transitionClasses);
 			_metalDom2.default.removeClasses(content, openClasses);
@@ -17974,7 +17983,7 @@ var ClayCollapse = function (_State) {
 			content.offsetHeight;
 			content.style.removeProperty('height');
 
-			this.shimUnsupportedTransition_(content);
+			this._shimUnsupportedTransition(content);
 		}
 
 		/**
@@ -17983,8 +17992,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'animateOpen_',
-		value: function animateOpen_() {
+		key: '_animateOpen',
+		value: function _animateOpen() {
 			var closedClasses = this.closedClasses,
 			    content = this.content,
 			    transitionClasses = this.transitionClasses;
@@ -17994,9 +18003,9 @@ var ClayCollapse = function (_State) {
 			_metalDom2.default.removeClasses(content, closedClasses);
 			_metalDom2.default.addClasses(content, transitionClasses);
 
-			this.updateContentHeight_();
+			this._updateContentHeight();
 
-			this.shimUnsupportedTransition_(content);
+			this._shimUnsupportedTransition(content);
 		}
 
 		/**
@@ -18006,9 +18015,9 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'attachHeaderListeners_',
-		value: function attachHeaderListeners_(header) {
-			this.eventHandler_.add(_metalDom2.default.on(header, 'click', this.handleClick_.bind(this)), _metalDom2.default.on(header, 'keydown', this.handleKeydown_.bind(this)));
+		key: '_attachHeaderListeners',
+		value: function _attachHeaderListeners(header) {
+			this._eventHandler.add(_metalDom2.default.on(header, 'click', this._handleClick.bind(this)), _metalDom2.default.on(header, 'keydown', this._handleKeydown.bind(this)));
 		}
 
 		/**
@@ -18018,8 +18027,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'close_',
-		value: function close_() {
+		key: '_close',
+		value: function _close() {
 			var closedClasses = this.closedClasses,
 			    content = this.content,
 			    openClasses = this.openClasses,
@@ -18040,8 +18049,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'getTransitionEndEvent_',
-		value: function getTransitionEndEvent_() {
+		key: '_getTransitionEndEvent',
+		value: function _getTransitionEndEvent() {
 			var el = document.createElement('metalClayTransitionEnd');
 
 			var transitionEndEvents = {
@@ -18066,8 +18075,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'handleClick_',
-		value: function handleClick_() {
+		key: '_handleClick',
+		value: function _handleClick() {
 			this.toggle();
 		}
 
@@ -18078,9 +18087,9 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'handleCollapsedChanged_',
-		value: function handleCollapsedChanged_() {
-			this.collapsed ? this.animateClose_() : this.animateOpen_();
+		key: '_handleCollapsedChanged',
+		value: function _handleCollapsedChanged() {
+			this.collapsed ? this._animateClose() : this._animateOpen();
 		}
 
 		/**
@@ -18088,9 +18097,9 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'handleHeadersChanged_',
-		value: function handleHeadersChanged_() {
-			this.syncHeaderListeners_();
+		key: '_handleHeadersChanged',
+		value: function _handleHeadersChanged() {
+			this._syncHeaderListeners();
 		}
 
 		/**
@@ -18100,8 +18109,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'handleKeydown_',
-		value: function handleKeydown_(event) {
+		key: '_handleKeydown',
+		value: function _handleKeydown(event) {
 			// eslint-disable-next-line
 			if (event.keyCode === KEY_CODE_ENTER || event.keyCode === KEY_CODE_SPACE) {
 				this.toggle();
@@ -18115,9 +18124,9 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'handleTransitionEnd_',
-		value: function handleTransitionEnd_() {
-			this.content.transitionType ? this.open_() : this.close_();
+		key: '_handleTransitionEnd',
+		value: function _handleTransitionEnd() {
+			this.content.transitionType ? this._open() : this._close();
 		}
 
 		/**
@@ -18127,8 +18136,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'open_',
-		value: function open_() {
+		key: '_open',
+		value: function _open() {
 			var content = this.content,
 			    openClasses = this.openClasses,
 			    transitionClasses = this.transitionClasses;
@@ -18147,8 +18156,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'shimUnsupportedTransition_',
-		value: function shimUnsupportedTransition_(element) {
+		key: '_shimUnsupportedTransition',
+		value: function _shimUnsupportedTransition(element) {
 			if (!this.supportsTransitionEnd) {
 				_metalAnim2.default.emulateTransitionEnd(element);
 			}
@@ -18161,20 +18170,20 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'syncHeaderListeners_',
-		value: function syncHeaderListeners_() {
+		key: '_syncHeaderListeners',
+		value: function _syncHeaderListeners() {
 			var _this2 = this;
 
 			var headers = this.headers;
 
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
 
 			if (Array.isArray(headers)) {
 				headers.forEach(function (header) {
-					_this2.attachHeaderListeners_(header);
+					_this2._attachHeaderListeners(header);
 				});
 			} else {
-				this.attachHeaderListeners_(headers);
+				this._attachHeaderListeners(headers);
 			}
 		}
 
@@ -18190,7 +18199,7 @@ var ClayCollapse = function (_State) {
 			    content = this.content,
 			    transitionEnd = this.transitionEnd;
 
-			_metalDom2.default.once(content, transitionEnd, this.handleTransitionEnd_.bind(this));
+			_metalDom2.default.once(content, transitionEnd, this._handleTransitionEnd.bind(this));
 
 			this.collapsed = !collapsed;
 		}
@@ -18201,8 +18210,8 @@ var ClayCollapse = function (_State) {
    */
 
 	}, {
-		key: 'updateContentHeight_',
-		value: function updateContentHeight_() {
+		key: '_updateContentHeight',
+		value: function _updateContentHeight() {
 			var content = this.content;
 
 			content.setAttribute('style', 'height: ' + content.firstElementChild.offsetHeight + 'px;');
@@ -18463,8 +18472,8 @@ var ClayDatasetDisplay = function (_Component) {
 				}
 			}
 
-			this.selectedItems_ = selectedItems;
-			this.totalItems_ = totalItems;
+			this._selectedItems = selectedItems;
+			this._totalItems = totalItems;
 		}
 
 		/**
@@ -18474,14 +18483,14 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'deselectAllItems_',
-		value: function deselectAllItems_() {
+		key: '_deselectAllItems',
+		value: function _deselectAllItems() {
 			var _iteratorNormalCompletion3 = true;
 			var _didIteratorError3 = false;
 			var _iteratorError3 = undefined;
 
 			try {
-				for (var _iterator3 = this.selectedItems_[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+				for (var _iterator3 = this._selectedItems[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 					var item = _step3.value;
 
 					item.selected = false;
@@ -18501,7 +18510,7 @@ var ClayDatasetDisplay = function (_Component) {
 				}
 			}
 
-			this.selectedItems_ = [];
+			this._selectedItems = [];
 		}
 
 		/**
@@ -18513,7 +18522,7 @@ var ClayDatasetDisplay = function (_Component) {
 	}, {
 		key: 'getSelectedItems',
 		value: function getSelectedItems() {
-			return this.selectedItems_;
+			return this._selectedItems;
 		}
 
 		/**
@@ -18523,8 +18532,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleActionClicked_',
-		value: function handleActionClicked_(event) {
+		key: '_handleActionClicked',
+		value: function _handleActionClicked(event) {
 			this.emit('actionClicked', event);
 		}
 
@@ -18535,8 +18544,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleCreationButtonClicked_',
-		value: function handleCreationButtonClicked_(event) {
+		key: '_handleCreationButtonClicked',
+		value: function _handleCreationButtonClicked(event) {
 			this.emit('creationButtonClicked', event);
 		}
 
@@ -18546,9 +18555,9 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleDeselectAllClicked_',
-		value: function handleDeselectAllClicked_() {
-			this.deselectAllItems_();
+		key: '_handleDeselectAllClicked',
+		value: function _handleDeselectAllClicked() {
+			this._deselectAllItems();
 		}
 
 		/**
@@ -18558,8 +18567,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleFilterDoneClicked_',
-		value: function handleFilterDoneClicked_(event) {
+		key: '_handleFilterDoneClicked',
+		value: function _handleFilterDoneClicked(event) {
 			this.emit('filterDoneClicked', event);
 		}
 
@@ -18571,8 +18580,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleItemToggled_',
-		value: function handleItemToggled_(event) {
+		key: '_handleItemToggled',
+		value: function _handleItemToggled(event) {
 			var checkedStatus = event.target.checked;
 			var itemId = event.target.getAttribute('value');
 
@@ -18582,14 +18591,14 @@ var ClayDatasetDisplay = function (_Component) {
 				var _iteratorError4 = undefined;
 
 				try {
-					for (var _iterator4 = this.selectedItems_.entries()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+					for (var _iterator4 = this._selectedItems.entries()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 						var _step4$value = _slicedToArray(_step4.value, 2),
 						    index = _step4$value[0],
 						    item = _step4$value[1];
 
 						if (item[this.views[this.selectedView].schema.inputValueField] === itemId) {
 							item.selected = false;
-							this.selectedItems_.splice(index, 1);
+							this._selectedItems.splice(index, 1);
 							break;
 						}
 					}
@@ -18630,7 +18639,7 @@ var ClayDatasetDisplay = function (_Component) {
 
 										if (childrenItem[this.views[this.selectedView].schema.inputValueField] === itemId) {
 											childrenItem.selected = true;
-											this.selectedItems_.push(childrenItem);
+											this._selectedItems.push(childrenItem);
 											found = true;
 											break;
 										}
@@ -18652,7 +18661,7 @@ var ClayDatasetDisplay = function (_Component) {
 							} else {
 								if (item[this.views[this.selectedView].schema.inputValueField] === itemId) {
 									item.selected = true;
-									this.selectedItems_.push(item);
+									this._selectedItems.push(item);
 									found = true;
 								}
 							}
@@ -18679,7 +18688,7 @@ var ClayDatasetDisplay = function (_Component) {
 			}
 
 			this.items = this.items;
-			this.selectedItems_ = this.selectedItems_;
+			this._selectedItems = this._selectedItems;
 		}
 
 		/**
@@ -18689,8 +18698,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleSearch_',
-		value: function handleSearch_(event) {
+		key: '_handleSearch',
+		value: function _handleSearch(event) {
 			this.emit('search', event);
 		}
 
@@ -18701,8 +18710,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleSortingButtonClicked_',
-		value: function handleSortingButtonClicked_(event) {
+		key: '_handleSortingButtonClicked',
+		value: function _handleSortingButtonClicked(event) {
 			this.emit('sortingButtonClicked', event);
 		}
 
@@ -18712,9 +18721,9 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleSelectAllClicked_',
-		value: function handleSelectAllClicked_() {
-			this.selectAllItems_();
+		key: '_handleSelectAllClicked',
+		value: function _handleSelectAllClicked() {
+			this._selectAllItems();
 		}
 
 		/**
@@ -18725,14 +18734,14 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleSelectPageCheckboxChanged_',
-		value: function handleSelectPageCheckboxChanged_(event) {
+		key: '_handleSelectPageCheckboxChanged',
+		value: function _handleSelectPageCheckboxChanged(event) {
 			var checkboxStatus = event.target.checked;
 
 			if (checkboxStatus) {
-				this.selectAllItems_();
+				this._selectAllItems();
 			} else {
-				this.deselectAllItems_();
+				this._deselectAllItems();
 			}
 		}
 
@@ -18743,8 +18752,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'handleViewTypeClicked_',
-		value: function handleViewTypeClicked_(event) {
+		key: '_handleViewTypeClicked',
+		value: function _handleViewTypeClicked(event) {
 			this.views[this.selectedView].active = false;
 
 			var _iteratorNormalCompletion7 = true;
@@ -18786,8 +18795,8 @@ var ClayDatasetDisplay = function (_Component) {
    */
 
 	}, {
-		key: 'selectAllItems_',
-		value: function selectAllItems_() {
+		key: '_selectAllItems',
+		value: function _selectAllItems() {
 			var selectedItems = [];
 
 			var _iteratorNormalCompletion8 = true;
@@ -18846,7 +18855,7 @@ var ClayDatasetDisplay = function (_Component) {
 				}
 			}
 
-			this.selectedItems_ = selectedItems;
+			this._selectedItems = selectedItems;
 		}
 	}]);
 
@@ -18861,6 +18870,24 @@ var ClayDatasetDisplay = function (_Component) {
 
 ClayDatasetDisplay.STATE = {
 	/**
+  * The selected items of the item list. For internatl purposes.
+  * @instance
+  * @memberof ClayDatasetDisplay
+  * @type {?array|undefined}
+  * @default undefined
+  */
+	_selectedItems: _metalState.Config.array().internal(),
+
+	/**
+  * The total number of items in the item list. For internatl purposes.
+  * @instance
+  * @memberof ClayDatasetDisplay
+  * @type {?int|undefined}
+  * @default undefined
+  */
+	_totalItems: _metalState.Config.number().internal(),
+
+	/**
   * List of items to display in the management toolbar actions menu.
   * @instance
   * @memberof ClayDatasetDisplay
@@ -18873,15 +18900,15 @@ ClayDatasetDisplay.STATE = {
   * Configuration of the management bar plus button.
   * @instance
   * @memberof ClayDatasetDisplay
-  * @type {?object|undefined}
+  * @type {?object|string|bool|undefined}
   * @default undefined
   */
-	creationMenu: _metalState.Config.shapeOf({
+	creationMenu: _metalState.Config.oneOfType([_metalState.Config.bool().value(false), _metalState.Config.string(), _metalState.Config.shapeOf({
 		button: _metalState.Config.object(),
 		caption: _metalState.Config.string(),
 		helpText: _metalState.Config.string(),
 		items: _clayManagementToolbar.actionItemsValidator
-	}),
+	})]),
 
 	/**
   * CSS classes to be applied to the element.
@@ -18966,15 +18993,6 @@ ClayDatasetDisplay.STATE = {
 	selectable: _metalState.Config.bool().value(false),
 
 	/**
-  * The selected items of the item list. For internatl purposes.
-  * @instance
-  * @memberof ClayDatasetDisplay
-  * @type {?array|undefined}
-  * @default undefined
-  */
-	selectedItems_: _metalState.Config.array().internal(),
-
-	/**
   * Position in the views list of the selected view.
   * @instance
   * @memberof ClayDatasetDisplay
@@ -19009,15 +19027,6 @@ ClayDatasetDisplay.STATE = {
   * @default undefined
   */
 	title: _metalState.Config.string(),
-
-	/**
-  * The total number of items in the item list. For internatl purposes.
-  * @instance
-  * @memberof ClayDatasetDisplay
-  * @type {?int|undefined}
-  * @default undefined
-  */
-	totalItems_: _metalState.Config.number().internal(),
 
 	/**
   * List of view items.
@@ -19155,8 +19164,8 @@ var ClayModal = function (_Component) {
    * @inheritDoc
    */
 		value: function created() {
-			this.overlayElement_ = this.valueOverlayElementFn_();
-			this.eventHandler_ = new _metalEvents.EventHandler();
+			this._overlayElement = this._valueOverlayElementFn();
+			this._eventHandler = new _metalEvents.EventHandler();
 		}
 
 		/**
@@ -19166,11 +19175,11 @@ var ClayModal = function (_Component) {
 	}, {
 		key: 'attached',
 		value: function attached() {
-			this.addListener('click', this.handleDocumentClick_.bind(this), true);
-			this.addListener('hide', this.defaultHideModal_, true);
-			this.addListener('show', this.defaultShowModal_, true);
-			this.addListener('touchend', this.handleDocumentClick_.bind(this), true);
-			this.addListener('transitionend', this.handleTransitionEnd_, true);
+			this.addListener('click', this._handleDocumentClick.bind(this), true);
+			this.addListener('hide', this._defaultHideModal, true);
+			this.addListener('show', this._defaultShowModal, true);
+			this.addListener('touchend', this._handleDocumentClick.bind(this), true);
+			this.addListener('transitionend', this._handleTransitionEnd, true);
 		}
 
 		/**
@@ -19181,7 +19190,23 @@ var ClayModal = function (_Component) {
 		key: 'detached',
 		value: function detached() {
 			_get(ClayModal.prototype.__proto__ || Object.getPrototypeOf(ClayModal.prototype), 'detached', this).call(this);
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
+		}
+
+		/**
+   * @inheritDoc
+   */
+		// eslint-disable-next-line
+
+	}, {
+		key: 'sync_isTransitioning',
+		value: function sync_isTransitioning() {
+			if (this._isTransitioning && !this.visible) {
+				this._isTransitioning = false;
+				this.visible = true;
+			} else if (this._isTransitioning && this.visible) {
+				this.visible = false;
+			}
 		}
 
 		/**
@@ -19192,26 +19217,11 @@ var ClayModal = function (_Component) {
 		key: 'syncVisible',
 		value: function syncVisible() {
 			if (this.visible) {
-				_metalDom2.default.enterDocument(this.overlayElement_);
-				this.overlayElement_.offsetHeight;
-				_metalDom2.default.addClasses(this.overlayElement_, 'show');
+				_metalDom2.default.enterDocument(this._overlayElement);
+				this._overlayElement.offsetHeight;
+				_metalDom2.default.addClasses(this._overlayElement, 'show');
 			} else {
-				_metalDom2.default.exitDocument(this.overlayElement_);
-			}
-		}
-
-		/**
-   * @inheritDoc
-   */
-
-	}, {
-		key: 'syncIsTransitioning_',
-		value: function syncIsTransitioning_() {
-			if (this.isTransitioning_ && !this.visible) {
-				this.isTransitioning_ = false;
-				this.visible = true;
-			} else if (this.isTransitioning_ && this.visible) {
-				this.visible = false;
+				_metalDom2.default.exitDocument(this._overlayElement);
 			}
 		}
 
@@ -19221,14 +19231,14 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'defaultHideModal_',
-		value: function defaultHideModal_() {
-			_metalDom2.default.removeClasses(this.overlayElement_, 'show');
+		key: '_defaultHideModal',
+		value: function _defaultHideModal() {
+			_metalDom2.default.removeClasses(this._overlayElement, 'show');
 			_metalDom2.default.removeClasses(document.body, 'modal-open');
 
-			this.isTransitioning_ = true;
+			this._isTransitioning = true;
 
-			this.eventHandler_.removeAllListeners();
+			this._eventHandler.removeAllListeners();
 		}
 
 		/**
@@ -19237,13 +19247,13 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'defaultShowModal_',
-		value: function defaultShowModal_() {
+		key: '_defaultShowModal',
+		value: function _defaultShowModal() {
 			_metalDom2.default.addClasses(document.body, 'modal-open');
 
-			this.isTransitioning_ = true;
+			this._isTransitioning = true;
 
-			this.eventHandler_.add(_metalDom2.default.on(document, 'keyup', this.handleKeyup_.bind(this)));
+			this._eventHandler.add(_metalDom2.default.on(document, 'keyup', this._handleKeyup.bind(this)));
 		}
 
 		/**
@@ -19253,8 +19263,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleClickFooterButton_',
-		value: function handleClickFooterButton_(event) {
+		key: '_handleClickFooterButton',
+		value: function _handleClickFooterButton(event) {
 			this.emit('clickButton', event);
 		}
 
@@ -19265,8 +19275,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleClickCloseButtonFooter_',
-		value: function handleClickCloseButtonFooter_(event) {
+		key: '_handleClickCloseButtonFooter',
+		value: function _handleClickCloseButtonFooter(event) {
 			this.emit('clickButton', event);
 			this.emit('hide');
 		}
@@ -19277,8 +19287,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleCloseModal_',
-		value: function handleCloseModal_() {
+		key: '_handleCloseModal',
+		value: function _handleCloseModal() {
 			this.emit('hide');
 		}
 
@@ -19289,8 +19299,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleDocumentClick_',
-		value: function handleDocumentClick_(event) {
+		key: '_handleDocumentClick',
+		value: function _handleDocumentClick(event) {
 			if (_metalDom2.default.contains(event.target, this.element)) {
 				this.emit('hide');
 			}
@@ -19303,8 +19313,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleKeyup_',
-		value: function handleKeyup_(event) {
+		key: '_handleKeyup',
+		value: function _handleKeyup(event) {
 			if (event.keyCode === KEY_CODE_ESC) {
 				this.emit('hide');
 			}
@@ -19317,10 +19327,10 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'handleTransitionEnd_',
-		value: function handleTransitionEnd_(event) {
-			if (event.target === this.element && this.isTransitioning_ && !this.visible) {
-				this.isTransitioning_ = false;
+		key: '_handleTransitionEnd',
+		value: function _handleTransitionEnd(event) {
+			if (event.target === this.element && this._isTransitioning && !this.visible) {
+				this._isTransitioning = false;
 			}
 		}
 
@@ -19331,8 +19341,8 @@ var ClayModal = function (_Component) {
    */
 
 	}, {
-		key: 'valueOverlayElementFn_',
-		value: function valueOverlayElementFn_() {
+		key: '_valueOverlayElementFn',
+		value: function _valueOverlayElementFn() {
 			return _metalDom2.default.buildFragment('<div class="modal-backdrop fade"></div>').firstChild;
 		}
 
@@ -19407,7 +19417,7 @@ ClayModal.STATE = {
   * @default false
   * @private
   */
-	isTransitioning_: _metalState.Config.bool().value(false).internal(),
+	_isTransitioning: _metalState.Config.bool().value(false).internal(),
 
 	/**
   * The size of element modal.
@@ -19558,7 +19568,27 @@ var ClayNavigationBar = function (_Component) {
    * @inheritDoc
    */
 		value: function attached() {
-			this.addListener('transitionend', this.handleTransitionEnd_, true);
+			this.addListener('transitionend', this._handleTransitionEnd, true);
+		}
+
+		/**
+   * @inheritDoc
+   */
+		// eslint-disable-next-line
+
+	}, {
+		key: 'sync_isTransitioning',
+		value: function sync_isTransitioning() {
+			var elementCollapse = this.element.querySelector('.navbar-collapse');
+
+			if (this._isTransitioning && !this._visible) {
+				var heightCollapse = elementCollapse.querySelector('.container').clientHeight;
+
+				elementCollapse.setAttribute('style', 'height: ' + heightCollapse + 'px');
+			} else if (this._isTransitioning && this._visible) {
+				elementCollapse.setAttribute('style', 'height: 0');
+				elementCollapse.removeAttribute('style');
+			}
 		}
 
 		/**
@@ -19567,10 +19597,10 @@ var ClayNavigationBar = function (_Component) {
    */
 
 	}, {
-		key: 'handleClickToggler_',
-		value: function handleClickToggler_() {
-			if (!this.isTransitioning_) {
-				this.isTransitioning_ = true;
+		key: '_handleClickToggler',
+		value: function _handleClickToggler() {
+			if (!this._isTransitioning) {
+				this._isTransitioning = true;
 			}
 		}
 
@@ -19581,34 +19611,15 @@ var ClayNavigationBar = function (_Component) {
    */
 
 	}, {
-		key: 'handleTransitionEnd_',
-		value: function handleTransitionEnd_(event) {
+		key: '_handleTransitionEnd',
+		value: function _handleTransitionEnd(event) {
 			var element = this.element.querySelector('.navbar-collapse');
-			if (element == event.target && this.isTransitioning_ && !this.visible_) {
-				this.visible_ = true;
-				this.isTransitioning_ = false;
+			if (element == event.target && this._isTransitioning && !this._visible) {
+				this._visible = true;
+				this._isTransitioning = false;
 			} else if (element == event.target) {
-				this.visible_ = false;
-				this.isTransitioning_ = false;
-			}
-		}
-
-		/**
-   * @inheritDoc
-   */
-
-	}, {
-		key: 'syncIsTransitioning_',
-		value: function syncIsTransitioning_() {
-			var elementCollapse = this.element.querySelector('.navbar-collapse');
-
-			if (this.isTransitioning_ && !this.visible_) {
-				var heightCollapse = elementCollapse.querySelector('.container').clientHeight;
-
-				elementCollapse.setAttribute('style', 'height: ' + heightCollapse + 'px');
-			} else if (this.isTransitioning_ && this.visible_) {
-				elementCollapse.setAttribute('style', 'height: 0');
-				elementCollapse.removeAttribute('style');
+				this._visible = false;
+				this._isTransitioning = false;
 			}
 		}
 	}]);
@@ -19623,6 +19634,26 @@ var ClayNavigationBar = function (_Component) {
  */
 
 ClayNavigationBar.STATE = {
+	/**
+  * The toggle animation.
+  * @instance
+  * @memberof ClayNavigationBar
+  * @type {?boolean}
+  * @default false
+  * @private
+  */
+	_isTransitioning: _metalState.Config.bool().value(false).internal(),
+
+	/**
+  * Navmenus visible in mobile when click in the button.
+  * @instance
+  * @memberof ClayNavigationBar
+  * @type {?bool}
+  * @default false
+  * @private
+  */
+	_visible: _metalState.Config.bool().value(false).internal(),
+
 	/**
   * CSS classes to be applied to the element.
   * @instance
@@ -19651,16 +19682,6 @@ ClayNavigationBar.STATE = {
 	inverted: _metalState.Config.bool().value(false),
 
 	/**
-  * The toggle animation.
-  * @instance
-  * @memberof ClayNavigationBar
-  * @type {?boolean}
-  * @default false
-  * @private
-  */
-	isTransitioning_: _metalState.Config.bool().value(false).internal(),
-
-	/**
   * List of items to show in the Navbar.
   * @instance
   * @memberof ClayNavigationBar
@@ -19680,17 +19701,7 @@ ClayNavigationBar.STATE = {
   * @type {!string}
   * @default undefined
   */
-	spritemap: _metalState.Config.string().required(),
-
-	/**
-  * Navmenus visible in mobile when click in the button.
-  * @instance
-  * @memberof ClayNavigationBar
-  * @type {?bool}
-  * @default false
-  * @private
-  */
-	visible_: _metalState.Config.bool().value(false).internal()
+	spritemap: _metalState.Config.string().required()
 };
 
 (0, _metalWebComponent2.default)('clay-navigation-bar', ClayNavigationBar);
@@ -19805,6 +19816,17 @@ ClaySelect.STATE = {
   id: _metalState.Config.string(),
 
   /**
+   * Flag to indicate if select should be wrapped to be inline or not.
+   * In order to make inline work properly you may place it inside
+   * a .form-group-autofit container.
+   * @instance
+   * @memberof ClaySelect
+   * @type {?bool}
+   * @default false
+   */
+  inline: _metalState.Config.bool().value(false),
+
+  /**
    * Label of the select element.
    * @instance
    * @memberof ClaySelect
@@ -19842,19 +19864,7 @@ ClaySelect.STATE = {
     label: _metalState.Config.string().required(),
     selected: _metalState.Config.bool().value(false),
     value: _metalState.Config.string().required()
-  })).required(),
-
-  /**
-   * Type of the select wrapper element.
-   * In order to make inline-group work properly you may place it inside
-   * a .form-inline.form-inline-autofit container.
-   * container.
-   * @instance
-   * @memberof ClaySelect
-   * @type {?string|undefined}
-   * @default group
-   */
-  wrapperType: _metalState.Config.oneOf(['inline-group', 'group']).value('group')
+  })).required()
 };
 
 (0, _metalWebComponent2.default)('clay-select', ClaySelect);
@@ -51907,17 +51917,17 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleHide = opt_data._handleHide;
     /** @type {boolean|null|undefined} */
     var closeable = soy.asserts.assertType(opt_data.closeable == null || goog.isBoolean(opt_data.closeable) || opt_data.closeable === 1 || opt_data.closeable === 0, 'closeable', opt_data.closeable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleHide_ = opt_data.handleHide_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var style = soy.asserts.assertType(opt_data.style == null || goog.isString(opt_data.style) || opt_data.style instanceof goog.soy.data.SanitizedContent, 'style', opt_data.style, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    $templateAlias1({ closeable: closeable, elementClasses: elementClasses, events: { hide: handleHide_ }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title }, null, opt_ijData);
+    $templateAlias1({ closeable: closeable, elementClasses: elementClasses, events: { hide: _handleHide }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title }, null, opt_ijData);
   };
   exports.render = $render;
   /**
@@ -51925,9 +51935,9 @@ goog.loadModule(function (exports) {
    *  message: (!goog.soy.data.SanitizedContent|function()|string),
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleHide: (*|null|undefined),
    *  closeable: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleHide_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  style: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -51937,8 +51947,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayAlert.render';
   }
 
-  exports.render.params = ["message", "spritemap", "title", "closeable", "elementClasses", "handleHide_", "id", "style"];
-  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "closeable": "bool", "elementClasses": "string", "handleHide_": "any", "id": "string", "style": "string" };
+  exports.render.params = ["message", "spritemap", "title", "_handleHide", "closeable", "elementClasses", "id", "style"];
+  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "_handleHide": "any", "closeable": "bool", "elementClasses": "string", "id": "string", "style": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -52030,27 +52040,27 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleCloseClick = opt_data._handleCloseClick;
+    /** @type {boolean|null|undefined} */
+    var _visible = soy.asserts.assertType(opt_data._visible == null || goog.isBoolean(opt_data._visible) || opt_data._visible === 1 || opt_data._visible === 0, '_visible', opt_data._visible, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var autoClose = soy.asserts.assertType(opt_data.autoClose == null || goog.isBoolean(opt_data.autoClose) || opt_data.autoClose === 1 || opt_data.autoClose === 0, 'autoClose', opt_data.autoClose, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var closeable = soy.asserts.assertType(opt_data.closeable == null || goog.isBoolean(opt_data.closeable) || opt_data.closeable === 1 || opt_data.closeable === 0, 'closeable', opt_data.closeable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseClick_ = opt_data.handleCloseClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var style = soy.asserts.assertType(opt_data.style == null || goog.isString(opt_data.style) || opt_data.style instanceof goog.soy.data.SanitizedContent, 'style', opt_data.style, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var type = soy.asserts.assertType(opt_data.type == null || goog.isString(opt_data.type) || opt_data.type instanceof goog.soy.data.SanitizedContent, 'type', opt_data.type, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {boolean|null|undefined} */
-    var visible_ = soy.asserts.assertType(opt_data.visible_ == null || goog.isBoolean(opt_data.visible_) || opt_data.visible_ === 1 || opt_data.visible_ === 0, 'visible_', opt_data.visible_, 'boolean|null|undefined');
     var attributes__soy68 = function attributes__soy68() {
-      incrementalDom.attr('class', 'alert alert-' + (($$temp = style) == null ? 'info' : $$temp) + ' fade' + (closeable ? ' alert-dismissible' : '') + (elementClasses ? ' ' + elementClasses : '') + (type == 'stripe' ? ' alert-fluid' : '') + (visible_ != false ? ' show' : ''));
-      if (autoClose && (type == 'stripe' || type == 'toast') && visible_) {
-        incrementalDom.attr('data-onmouseover', 'handleMouseOver_');
-        incrementalDom.attr('data-onmouseout', 'handleMouseOut_');
+      incrementalDom.attr('class', 'alert alert-' + (($$temp = style) == null ? 'info' : $$temp) + ' fade' + (closeable ? ' alert-dismissible' : '') + (elementClasses ? ' ' + elementClasses : '') + (type == 'stripe' ? ' alert-fluid' : '') + (_visible != false ? ' show' : ''));
+      if (autoClose && (type == 'stripe' || type == 'toast') && _visible) {
+        incrementalDom.attr('data-onmouseover', '_handleMouseOver');
+        incrementalDom.attr('data-onmouseout', '_handleMouseOut');
       }
       if (id) {
         incrementalDom.attr('id', id);
@@ -52080,14 +52090,14 @@ goog.loadModule(function (exports) {
    *  message: (!goog.soy.data.SanitizedContent|function()|string),
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleCloseClick: (*|null|undefined),
+   *  _visible: (boolean|null|undefined),
    *  autoClose: (boolean|null|undefined),
    *  closeable: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCloseClick_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  style: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  type: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  visible_: (boolean|null|undefined),
    * }}
    */
   $render.Params;
@@ -52111,14 +52121,14 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleCloseClick = opt_data._handleCloseClick;
     /** @type {boolean|null|undefined} */
     var closeable = soy.asserts.assertType(opt_data.closeable == null || goog.isBoolean(opt_data.closeable) || opt_data.closeable === 1 || opt_data.closeable === 0, 'closeable', opt_data.closeable, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseClick_ = opt_data.handleCloseClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var style = soy.asserts.assertType(opt_data.style == null || goog.isString(opt_data.style) || opt_data.style instanceof goog.soy.data.SanitizedContent, 'style', opt_data.style, '!goog.soy.data.SanitizedContent|null|string|undefined');
     if (closeable) {
-      $templateAlias1({ ariaLabel: 'Close', elementClasses: 'close', events: { click: handleCloseClick_ }, icon: 'times', iconAlignment: 'right', spritemap: spritemap, style: 'unstyled', type: 'button' }, null, opt_ijData);
+      $templateAlias1({ ariaLabel: 'Close', elementClasses: 'close', events: { click: _handleCloseClick }, icon: 'times', iconAlignment: 'right', spritemap: spritemap, style: 'unstyled', type: 'button' }, null, opt_ijData);
     }
     var icon__soy126 = '';
     var $tmp = style;
@@ -52153,8 +52163,8 @@ goog.loadModule(function (exports) {
    *  message: (!goog.soy.data.SanitizedContent|function()|string),
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleCloseClick: (*|null|undefined),
    *  closeable: (boolean|null|undefined),
-   *  handleCloseClick_: (*|null|undefined),
    *  style: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -52163,10 +52173,10 @@ goog.loadModule(function (exports) {
     $content.soyTemplateName = 'ClayAlertBase.content';
   }
 
-  exports.render.params = ["message", "spritemap", "title", "autoClose", "closeable", "elementClasses", "handleCloseClick_", "id", "style", "type", "visible_"];
-  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "autoClose": "bool", "closeable": "bool", "elementClasses": "string", "handleCloseClick_": "any", "id": "string", "style": "string", "type": "string", "visible_": "bool" };
-  exports.content.params = ["message", "spritemap", "title", "closeable", "handleCloseClick_", "style"];
-  exports.content.types = { "message": "html|string", "spritemap": "string", "title": "string", "closeable": "bool", "handleCloseClick_": "any", "style": "string" };
+  exports.render.params = ["message", "spritemap", "title", "_handleCloseClick", "_visible", "autoClose", "closeable", "elementClasses", "id", "style", "type"];
+  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "_handleCloseClick": "any", "_visible": "bool", "autoClose": "bool", "closeable": "bool", "elementClasses": "string", "id": "string", "style": "string", "type": "string" };
+  exports.content.params = ["message", "spritemap", "title", "_handleCloseClick", "closeable", "style"];
+  exports.content.types = { "message": "html|string", "spritemap": "string", "title": "string", "_handleCloseClick": "any", "closeable": "bool", "style": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -52254,17 +52264,17 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleHide = opt_data._handleHide;
     /** @type {boolean|null|undefined} */
     var autoClose = soy.asserts.assertType(opt_data.autoClose == null || goog.isBoolean(opt_data.autoClose) || opt_data.autoClose === 1 || opt_data.autoClose === 0, 'autoClose', opt_data.autoClose, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleHide_ = opt_data.handleHide_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var style = soy.asserts.assertType(opt_data.style == null || goog.isString(opt_data.style) || opt_data.style instanceof goog.soy.data.SanitizedContent, 'style', opt_data.style, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    $templateAlias1({ autoClose: autoClose, closeable: true, elementClasses: elementClasses, events: { hide: handleHide_ }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title, type: 'stripe' }, null, opt_ijData);
+    $templateAlias1({ autoClose: autoClose, closeable: true, elementClasses: elementClasses, events: { hide: _handleHide }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title, type: 'stripe' }, null, opt_ijData);
   };
   exports.render = $render;
   /**
@@ -52272,9 +52282,9 @@ goog.loadModule(function (exports) {
    *  message: (!goog.soy.data.SanitizedContent|function()|string),
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleHide: (*|null|undefined),
    *  autoClose: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleHide_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  style: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -52284,8 +52294,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayStripe.render';
   }
 
-  exports.render.params = ["message", "spritemap", "title", "autoClose", "elementClasses", "handleHide_", "id", "style"];
-  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "autoClose": "bool", "elementClasses": "string", "handleHide_": "any", "id": "string", "style": "string" };
+  exports.render.params = ["message", "spritemap", "title", "_handleHide", "autoClose", "elementClasses", "id", "style"];
+  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "_handleHide": "any", "autoClose": "bool", "elementClasses": "string", "id": "string", "style": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -52373,17 +52383,17 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleHide = opt_data._handleHide;
     /** @type {boolean|null|undefined} */
     var autoClose = soy.asserts.assertType(opt_data.autoClose == null || goog.isBoolean(opt_data.autoClose) || opt_data.autoClose === 1 || opt_data.autoClose === 0, 'autoClose', opt_data.autoClose, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleHide_ = opt_data.handleHide_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var style = soy.asserts.assertType(opt_data.style == null || goog.isString(opt_data.style) || opt_data.style instanceof goog.soy.data.SanitizedContent, 'style', opt_data.style, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    $templateAlias1({ autoClose: autoClose, closeable: true, elementClasses: elementClasses, events: { hide: handleHide_ }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title, type: 'toast' }, null, opt_ijData);
+    $templateAlias1({ autoClose: autoClose, closeable: true, elementClasses: elementClasses, events: { hide: _handleHide }, id: id, message: message, ref: 'alertBase', spritemap: spritemap, style: style, title: title, type: 'toast' }, null, opt_ijData);
   };
   exports.render = $render;
   /**
@@ -52391,9 +52401,9 @@ goog.loadModule(function (exports) {
    *  message: (!goog.soy.data.SanitizedContent|function()|string),
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleHide: (*|null|undefined),
    *  autoClose: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleHide_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  style: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -52403,8 +52413,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayToast.render';
   }
 
-  exports.render.params = ["message", "spritemap", "title", "autoClose", "elementClasses", "handleHide_", "id", "style"];
-  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "autoClose": "bool", "elementClasses": "string", "handleHide_": "any", "id": "string", "style": "string" };
+  exports.render.params = ["message", "spritemap", "title", "_handleHide", "autoClose", "elementClasses", "id", "style"];
+  exports.render.types = { "message": "html|string", "spritemap": "string", "title": "string", "_handleHide": "any", "autoClose": "bool", "elementClasses": "string", "id": "string", "style": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -52823,7 +52833,7 @@ goog.loadModule(function (exports) {
       incrementalDom.attr('aria-label', icon);
     }
     if (disabled) {
-      incrementalDom.attr('disabled', '');
+      incrementalDom.attr('disabled', 'disabled');
     }
     if (id) {
       incrementalDom.attr('id', id);
@@ -52960,10 +52970,10 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<?>|null|undefined} */
@@ -52990,8 +53000,8 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
+   *  _handleItemToggled: (*|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  items: (!Array<?>|null|undefined),
    *  selectable: (boolean|null|undefined),
@@ -53019,10 +53029,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     incrementalDom.elementOpenStart('li');
@@ -53055,8 +53065,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53080,10 +53090,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     var item89List = items;
@@ -53094,20 +53104,18 @@ goog.loadModule(function (exports) {
         var currentgroupName__soy104 = '';
         currentgroupName__soy104 += groupName ? groupName + '-' : '';
         currentgroupName__soy104 += item89Index;
-        var headerAttributes__soy109 = function headerAttributes__soy109() {
-          incrementalDom.attr('class', 'card-section-header');
-          incrementalDom.attr('id', 'group-' + currentgroupName__soy104);
-        };
-        incrementalDom.elementOpen('li');
+        incrementalDom.elementOpenStart('li');
+        incrementalDom.attr('class', 'card-page-item-header');
+        incrementalDom.elementOpenEnd();
         incrementalDom.elementOpenStart('h4');
-        headerAttributes__soy109();
+        incrementalDom.attr('class', 'card-section-header');
         incrementalDom.elementOpenEnd();
         soyIdom.print(item89Data.label);
         incrementalDom.elementClose('h4');
         incrementalDom.elementClose('li');
-        $items({ groupName: currentgroupName__soy104, handleItemToggled_: handleItemToggled_, items: item89Data.items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+        $items({ _handleItemToggled: _handleItemToggled, groupName: currentgroupName__soy104, items: item89Data.items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
       } else {
-        $item({ groupName: groupName, handleItemToggled_: handleItemToggled_, item: item89Data, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+        $item({ _handleItemToggled: _handleItemToggled, groupName: groupName, item: item89Data, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
       }
     }
   };
@@ -53117,8 +53125,8 @@ goog.loadModule(function (exports) {
    *  items: !Array<?>,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53142,10 +53150,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
   };
@@ -53155,8 +53163,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53182,10 +53190,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     var $tmp$$1 = null;
@@ -53204,7 +53212,7 @@ goog.loadModule(function (exports) {
     } else {
       $tmp$$1 = '';
     }
-    $templateAlias1({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: handleItemToggled_ }, fileType: item[schema.fieldsMap.fileType], fileTypeStyle: schema.fileTypeStylesMap ? ($$temp = schema.fileTypeStylesMap[item[schema.fieldsMap.fileType]]) == null ? schema.fileTypeStylesMap['*'] : $$temp : null, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], labels: item[schema.fieldsMap.labels], labelStylesMap: schema.labelStylesMap, selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], title: item[schema.fieldsMap.title] }, null, opt_ijData);
+    $templateAlias1({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: _handleItemToggled }, fileType: item[schema.fieldsMap.fileType], fileTypeStyle: schema.fileTypeStylesMap ? ($$temp = schema.fileTypeStylesMap[item[schema.fieldsMap.fileType]]) == null ? schema.fileTypeStylesMap['*'] : $$temp : null, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], labels: item[schema.fieldsMap.labels], labelStylesMap: schema.labelStylesMap, selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], title: item[schema.fieldsMap.title] }, null, opt_ijData);
   };
   exports.__deltemplate__ClayCardGrid_Card_file = __deltemplate__ClayCardGrid_Card_file;
   /**
@@ -53212,8 +53220,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53239,10 +53247,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     var $tmp$$1 = null;
@@ -53261,7 +53269,7 @@ goog.loadModule(function (exports) {
     } else {
       $tmp$$1 = '';
     }
-    $templateAlias2({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: handleItemToggled_ }, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], selectable: selectable, selected: item.selected, spritemap: spritemap, title: item[schema.fieldsMap.title] }, null, opt_ijData);
+    $templateAlias2({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: _handleItemToggled }, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], selectable: selectable, selected: item.selected, spritemap: spritemap, title: item[schema.fieldsMap.title] }, null, opt_ijData);
   };
   exports.__deltemplate__ClayCardGrid_Card_horizontal = __deltemplate__ClayCardGrid_Card_horizontal;
   /**
@@ -53269,8 +53277,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53296,10 +53304,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     var $tmp$$1 = null;
@@ -53318,7 +53326,7 @@ goog.loadModule(function (exports) {
     } else {
       $tmp$$1 = '';
     }
-    $templateAlias3({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: handleItemToggled_ }, fileType: item[schema.fieldsMap.fileType], fileTypeStyle: schema.fileTypeStylesMap ? ($$temp = schema.fileTypeStylesMap[item[schema.fieldsMap.fileType]]) == null ? schema.fileTypeStylesMap['*'] : $$temp : null, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], imageAlt: item[schema.fieldsMap.imageAlt], imageSrc: item[schema.fieldsMap.imageSrc], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], labels: item[schema.fieldsMap.labels], labelStylesMap: schema.labelStylesMap, selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], title: item[schema.fieldsMap.title] }, null, opt_ijData);
+    $templateAlias3({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: _handleItemToggled }, fileType: item[schema.fieldsMap.fileType], fileTypeStyle: schema.fileTypeStylesMap ? ($$temp = schema.fileTypeStylesMap[item[schema.fieldsMap.fileType]]) == null ? schema.fileTypeStylesMap['*'] : $$temp : null, groupName: groupName, href: item[schema.fieldsMap.href], icon: schema.iconsMap ? ($$temp = schema.iconsMap[item[schema.fieldsMap.icon]]) == null ? schema.iconsMap['*'] : $$temp : item[schema.fieldsMap.icon], imageAlt: item[schema.fieldsMap.imageAlt], imageSrc: item[schema.fieldsMap.imageSrc], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], labels: item[schema.fieldsMap.labels], labelStylesMap: schema.labelStylesMap, selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], title: item[schema.fieldsMap.title] }, null, opt_ijData);
   };
   exports.__deltemplate__ClayCardGrid_Card_image = __deltemplate__ClayCardGrid_Card_image;
   /**
@@ -53326,8 +53334,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53353,10 +53361,10 @@ goog.loadModule(function (exports) {
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,}');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     var $tmp$$1 = null;
@@ -53375,7 +53383,7 @@ goog.loadModule(function (exports) {
     } else {
       $tmp$$1 = '';
     }
-    $templateAlias4({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: handleItemToggled_ }, groupName: groupName, href: item[schema.fieldsMap.href], imageAlt: item[schema.fieldsMap.imageAlt], imageSrc: item[schema.fieldsMap.imageSrc], initials: item[schema.fieldsMap.initials], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], name: item[schema.fieldsMap.username], selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], userColor: schema.userColorsMap ? ($$temp = schema.userColorsMap[item[schema.fieldsMap.userColor]]) == null ? schema.userColorsMap['*'] : $$temp : item[schema.fieldsMap.userColor] }, null, opt_ijData);
+    $templateAlias4({ actionItems: item.actionItems, disabled: item.disabled, events: { itemToggled: _handleItemToggled }, groupName: groupName, href: item[schema.fieldsMap.href], imageAlt: item[schema.fieldsMap.imageAlt], imageSrc: item[schema.fieldsMap.imageSrc], initials: item[schema.fieldsMap.initials], inputName: '' + $tmp$$1, inputValue: item[schema.inputValueField], name: item[schema.fieldsMap.username], selectable: selectable, selected: item.selected, spritemap: spritemap, subtitle: item[schema.fieldsMap.description], userColor: schema.userColorsMap ? ($$temp = schema.userColorsMap[item[schema.fieldsMap.userColor]]) == null ? schema.userColorsMap['*'] : $$temp : item[schema.fieldsMap.userColor] }, null, opt_ijData);
   };
   exports.__deltemplate__ClayCardGrid_Card_user = __deltemplate__ClayCardGrid_Card_user;
   /**
@@ -53383,8 +53391,8 @@ goog.loadModule(function (exports) {
    *  item: ?,
    *  schema: {contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, fileTypeStylesMap: ?, iconsMap: ?, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string), labelStylesMap: ?, userColorsMap: ?,},
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    * }}
    */
@@ -53394,12 +53402,12 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayCardGrid.Card.idom'), 'user', 0, __deltemplate__ClayCardGrid_Card_user);
 
-  exports.render.params = ["schema", "elementClasses", "handleItemToggled_", "id", "items", "selectable", "spritemap"];
-  exports.render.types = { "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "elementClasses": "string", "handleItemToggled_": "any", "id": "string", "items": "list<?>", "selectable": "bool", "spritemap": "string" };
-  exports.item.params = ["item", "schema", "spritemap", "groupName", "handleItemToggled_", "selectable"];
-  exports.item.types = { "item": "?", "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "spritemap": "string", "groupName": "string", "handleItemToggled_": "any", "selectable": "bool" };
-  exports.items.params = ["items", "schema", "spritemap", "groupName", "handleItemToggled_", "selectable"];
-  exports.items.types = { "items": "list<?>", "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "spritemap": "string", "groupName": "string", "handleItemToggled_": "any", "selectable": "bool" };
+  exports.render.params = ["schema", "_handleItemToggled", "elementClasses", "id", "items", "selectable", "spritemap"];
+  exports.render.types = { "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "_handleItemToggled": "any", "elementClasses": "string", "id": "string", "items": "list<?>", "selectable": "bool", "spritemap": "string" };
+  exports.item.params = ["item", "schema", "spritemap", "_handleItemToggled", "groupName", "selectable"];
+  exports.item.types = { "item": "?", "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "spritemap": "string", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool" };
+  exports.items.params = ["items", "schema", "spritemap", "_handleItemToggled", "groupName", "selectable"];
+  exports.items.types = { "items": "list<?>", "schema": "[\n\t\tcontentRenderer: string,\n\t\tcontentRendererMap: ?,\n\t\tfieldName: string,\n\t\tfieldsMap: ?,\n\t\tfileTypeStylesMap: ?,\n\t\ticonsMap: ?,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string,\n\t\tlabelStylesMap: ?,\n\t\tuserColorsMap: ?\n\t]", "spritemap": "string", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -53496,6 +53504,8 @@ goog.loadModule(function (exports) {
     var $$temp;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemCheckboxClick = opt_data._handleItemCheckboxClick;
     /** @type {!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -53510,8 +53520,6 @@ goog.loadModule(function (exports) {
     var fileTypeStyle = soy.asserts.assertType(opt_data.fileTypeStyle == null || goog.isString(opt_data.fileTypeStyle) || opt_data.fileTypeStyle instanceof goog.soy.data.SanitizedContent, 'fileTypeStyle', opt_data.fileTypeStyle, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemCheckboxClick_ = opt_data.handleItemCheckboxClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -53564,7 +53572,7 @@ goog.loadModule(function (exports) {
       var param84 = function param84() {
         visualArea__soy70();
       };
-      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: selected, disabled: disabled, events: { change: handleItemCheckboxClick_ }, labelContent: param84, name: inputName, value: inputValue }, null, opt_ijData);
+      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: selected, disabled: disabled, events: { change: _handleItemCheckboxClick }, labelContent: param84, name: inputName, value: inputValue }, null, opt_ijData);
       incrementalDom.elementClose('div');
       descriptiveArea__soy59();
       incrementalDom.elementClose('div');
@@ -53582,6 +53590,7 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemCheckboxClick: (*|null|undefined),
    *  actionItems: (!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  disabled: (boolean|null|undefined),
@@ -53589,7 +53598,6 @@ goog.loadModule(function (exports) {
    *  fileType: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  fileTypeStyle: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemCheckboxClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -53747,8 +53755,8 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayCardBase.VisualArea.idom'), '', 0, __deltemplate__ClayCardBase_VisualArea_);
 
-  exports.render.params = ["title", "actionItems", "contentRenderer", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "handleItemCheckboxClick_", "href", "icon", "id", "imageAlt", "imageSrc", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "spritemap", "subtitle"];
-  exports.render.types = { "title": "string", "actionItems": "list<[\n\t\thref: string,\n\t\tlabel: string,\n\t\tseparator: bool\n\t]>", "contentRenderer": "string", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "handleItemCheckboxClick_": "any", "href": "string", "icon": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string" };
+  exports.render.params = ["title", "_handleItemCheckboxClick", "actionItems", "contentRenderer", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "href", "icon", "id", "imageAlt", "imageSrc", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "spritemap", "subtitle"];
+  exports.render.types = { "title": "string", "_handleItemCheckboxClick": "any", "actionItems": "list<[\n\t\thref: string,\n\t\tlabel: string,\n\t\tseparator: bool\n\t]>", "contentRenderer": "string", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "href": "string", "icon": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -53842,6 +53850,8 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -53854,8 +53864,6 @@ goog.loadModule(function (exports) {
     var fileTypeStyle = soy.asserts.assertType(opt_data.fileTypeStyle == null || goog.isString(opt_data.fileTypeStyle) || opt_data.fileTypeStyle instanceof goog.soy.data.SanitizedContent, 'fileTypeStyle', opt_data.fileTypeStyle, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -53879,20 +53887,20 @@ goog.loadModule(function (exports) {
     var classes__soy294 = '';
     classes__soy294 += 'file-card';
     classes__soy294 += elementClasses ? ' ' + elementClasses : '';
-    $templateAlias1({ actionItems: actionItems, contentRenderer: 'file', disabled: disabled, elementClasses: classes__soy294, events: { itemToggled: handleItemToggled_ }, fileType: fileType, fileTypeStyle: fileTypeStyle, groupName: groupName, href: href, icon: ($$temp = icon) == null ? 'documents-and-media' : $$temp, id: id, inputName: inputName, inputValue: inputValue, labels: labels, labelStylesMap: labelStylesMap, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: title }, null, opt_ijData);
+    $templateAlias1({ actionItems: actionItems, contentRenderer: 'file', disabled: disabled, elementClasses: classes__soy294, events: { itemToggled: _handleItemToggled }, fileType: fileType, fileTypeStyle: fileTypeStyle, groupName: groupName, href: href, icon: ($$temp = icon) == null ? 'documents-and-media' : $$temp, id: id, inputName: inputName, inputValue: inputValue, labels: labels, labelStylesMap: labelStylesMap, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: title }, null, opt_ijData);
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  actionItems: (!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  fileType: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  fileTypeStyle: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -53961,8 +53969,8 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayCardBase.VisualArea.idom'), 'file', 0, __deltemplate__ClayCardBase_VisualArea_file);
 
-  exports.render.params = ["spritemap", "title", "actionItems", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "handleItemToggled_", "href", "icon", "id", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "subtitle"];
-  exports.render.types = { "spritemap": "string", "title": "string", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "handleItemToggled_": "any", "href": "string", "icon": "string", "id": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "subtitle": "string" };
+  exports.render.params = ["spritemap", "title", "_handleItemToggled", "actionItems", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "href", "icon", "id", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "subtitle"];
+  exports.render.types = { "spritemap": "string", "title": "string", "_handleItemToggled": "any", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "href": "string", "icon": "string", "id": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "subtitle": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -54055,6 +54063,8 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemCheckboxClick = opt_data._handleItemCheckboxClick;
     /** @type {!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -54063,8 +54073,6 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemCheckboxClick_ = opt_data.handleItemCheckboxClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -54099,7 +54107,7 @@ goog.loadModule(function (exports) {
         descriptiveArea__soy398();
         incrementalDom.elementClose('div');
       };
-      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: selected, disabled: disabled, events: { change: handleItemCheckboxClick_ }, labelContent: param412, name: inputName, value: inputValue }, null, opt_ijData);
+      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: selected, disabled: disabled, events: { change: _handleItemCheckboxClick }, labelContent: param412, name: inputName, value: inputValue }, null, opt_ijData);
     } else {
       descriptiveArea__soy398();
     }
@@ -54110,11 +54118,11 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemCheckboxClick: (*|null|undefined),
    *  actionItems: (!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemCheckboxClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -54198,8 +54206,8 @@ goog.loadModule(function (exports) {
     $descriptiveArea.soyTemplateName = 'ClayHorizontalCard.descriptiveArea';
   }
 
-  exports.render.params = ["spritemap", "title", "actionItems", "disabled", "elementClasses", "groupName", "handleItemCheckboxClick_", "href", "icon", "id", "inputName", "inputValue", "selectable", "selected"];
-  exports.render.types = { "spritemap": "string", "title": "string", "actionItems": "list<[\n\t\thref: string,\n\t\tlabel: string,\n\t\tseparator: bool\n\t]>", "disabled": "bool", "elementClasses": "string", "groupName": "string", "handleItemCheckboxClick_": "any", "href": "string", "icon": "string", "id": "string", "inputName": "string", "inputValue": "string", "selectable": "bool", "selected": "bool" };
+  exports.render.params = ["spritemap", "title", "_handleItemCheckboxClick", "actionItems", "disabled", "elementClasses", "groupName", "href", "icon", "id", "inputName", "inputValue", "selectable", "selected"];
+  exports.render.types = { "spritemap": "string", "title": "string", "_handleItemCheckboxClick": "any", "actionItems": "list<[\n\t\thref: string,\n\t\tlabel: string,\n\t\tseparator: bool\n\t]>", "disabled": "bool", "elementClasses": "string", "groupName": "string", "href": "string", "icon": "string", "id": "string", "inputName": "string", "inputValue": "string", "selectable": "bool", "selected": "bool" };
   exports.descriptiveArea.params = ["spritemap", "title", "actionItems", "href", "icon"];
   exports.descriptiveArea.types = { "spritemap": "string", "title": "string", "actionItems": "list<[\n\t\thref: string,\n\t\tlabel: string,\n\t\tseparator: bool\n\t]>", "href": "string", "icon": "string" };
   exports.templates = templates = exports;
@@ -54292,6 +54300,8 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var title = soy.asserts.assertType(goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -54304,8 +54314,6 @@ goog.loadModule(function (exports) {
     var fileTypeStyle = soy.asserts.assertType(opt_data.fileTypeStyle == null || goog.isString(opt_data.fileTypeStyle) || opt_data.fileTypeStyle instanceof goog.soy.data.SanitizedContent, 'fileTypeStyle', opt_data.fileTypeStyle, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -54335,19 +54343,19 @@ goog.loadModule(function (exports) {
     var classes__soy558 = '';
     classes__soy558 += 'image-card';
     classes__soy558 += elementClasses ? ' ' + elementClasses : '';
-    $templateAlias1({ actionItems: actionItems, contentRenderer: 'image', disabled: disabled, elementClasses: classes__soy558, events: { itemToggled: handleItemToggled_ }, fileType: fileType, fileTypeStyle: fileTypeStyle, groupName: groupName, href: href, icon: icon, id: id, imageAlt: imageAlt, imageSrc: imageSrc, inputName: inputName, inputValue: inputValue, labels: labels, labelStylesMap: labelStylesMap, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: title }, null, opt_ijData);
+    $templateAlias1({ actionItems: actionItems, contentRenderer: 'image', disabled: disabled, elementClasses: classes__soy558, events: { itemToggled: _handleItemToggled }, fileType: fileType, fileTypeStyle: fileTypeStyle, groupName: groupName, href: href, icon: icon, id: id, imageAlt: imageAlt, imageSrc: imageSrc, inputName: inputName, inputValue: inputValue, labels: labels, labelStylesMap: labelStylesMap, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: title }, null, opt_ijData);
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  title: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  actionItems: (!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  fileType: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  fileTypeStyle: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -54432,8 +54440,8 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayCardBase.VisualArea.idom'), 'image', 0, __deltemplate__ClayCardBase_VisualArea_image);
 
-  exports.render.params = ["title", "actionItems", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "handleItemToggled_", "href", "icon", "id", "imageAlt", "imageSrc", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "spritemap", "subtitle"];
-  exports.render.types = { "title": "string", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "handleItemToggled_": "any", "href": "string", "icon": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string" };
+  exports.render.params = ["title", "_handleItemToggled", "actionItems", "disabled", "elementClasses", "fileType", "fileTypeStyle", "groupName", "href", "icon", "id", "imageAlt", "imageSrc", "inputName", "inputValue", "labels", "labelStylesMap", "selectable", "selected", "spritemap", "subtitle"];
+  exports.render.types = { "title": "string", "_handleItemToggled": "any", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "fileType": "string", "fileTypeStyle": "string", "groupName": "string", "href": "string", "icon": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "inputName": "string", "inputValue": "string", "labels": "list<?>", "labelStylesMap": "?", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -54527,6 +54535,8 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var name = soy.asserts.assertType(goog.isString(opt_data.name) || opt_data.name instanceof goog.soy.data.SanitizedContent, 'name', opt_data.name, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -54535,8 +54545,6 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -54564,17 +54572,17 @@ goog.loadModule(function (exports) {
     var classes__soy683 = '';
     classes__soy683 += 'user-card';
     classes__soy683 += elementClasses ? ' ' + elementClasses : '';
-    $templateAlias1({ actionItems: actionItems, contentRenderer: 'user', disabled: disabled, elementClasses: elementClasses, events: { itemToggled: handleItemToggled_ }, fileType: initials, fileTypeStyle: userColor, groupName: groupName, href: href, id: id, imageAlt: imageAlt, imageSrc: imageSrc, inputName: inputName, inputValue: inputValue, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: name }, null, opt_ijData);
+    $templateAlias1({ actionItems: actionItems, contentRenderer: 'user', disabled: disabled, elementClasses: elementClasses, events: { itemToggled: _handleItemToggled }, fileType: initials, fileTypeStyle: userColor, groupName: groupName, href: href, id: id, imageAlt: imageAlt, imageSrc: imageSrc, inputName: inputName, inputValue: inputValue, ref: 'card', selectable: selectable, selected: selected, spritemap: spritemap, subtitle: subtitle, title: name }, null, opt_ijData);
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  name: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemToggled: (*|null|undefined),
    *  actionItems: (!Array<{href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean,}>|null|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  imageAlt: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -54717,8 +54725,8 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayCardBase.VisualArea.idom'), 'user', 0, __deltemplate__ClayCardBase_VisualArea_user);
 
-  exports.render.params = ["name", "actionItems", "disabled", "elementClasses", "groupName", "handleItemToggled_", "href", "id", "imageAlt", "imageSrc", "initials", "inputName", "inputValue", "selectable", "selected", "spritemap", "subtitle", "userColor"];
-  exports.render.types = { "name": "string", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "groupName": "string", "handleItemToggled_": "any", "href": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "initials": "string", "inputName": "string", "inputValue": "string", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string", "userColor": "string" };
+  exports.render.params = ["name", "_handleItemToggled", "actionItems", "disabled", "elementClasses", "groupName", "href", "id", "imageAlt", "imageSrc", "initials", "inputName", "inputValue", "selectable", "selected", "spritemap", "subtitle", "userColor"];
+  exports.render.types = { "name": "string", "_handleItemToggled": "any", "actionItems": "list<[\n        href: string,\n        label: string,\n        separator: bool\n    ]>", "disabled": "bool", "elementClasses": "string", "groupName": "string", "href": "string", "id": "string", "imageAlt": "string", "imageSrc": "string", "initials": "string", "inputName": "string", "inputValue": "string", "selectable": "bool", "selected": "bool", "spritemap": "string", "subtitle": "string", "userColor": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -54800,12 +54808,12 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     opt_data = opt_data || {};
     /** @type {boolean|null|undefined} */
-    var loading_ = soy.asserts.assertType(opt_data.loading_ == null || goog.isBoolean(opt_data.loading_) || opt_data.loading_ === 1 || opt_data.loading_ === 0, 'loading_', opt_data.loading_, 'boolean|null|undefined');
+    var _loading = soy.asserts.assertType(opt_data._loading == null || goog.isBoolean(opt_data._loading) || opt_data._loading === 1 || opt_data._loading === 0, '_loading', opt_data._loading, 'boolean|null|undefined');
     incrementalDom.elementOpenStart('div');
     incrementalDom.attr('class', 'metal-chart-container');
     incrementalDom.elementOpenEnd();
     var chartAttrs__soy11 = function chartAttrs__soy11() {
-      if (loading_) {
+      if (_loading) {
         incrementalDom.attr('hidden', '');
       }
       incrementalDom.attr('ref', 'chart');
@@ -54816,7 +54824,7 @@ goog.loadModule(function (exports) {
     incrementalDom.elementOpenEnd();
     incrementalDom.elementClose('div');
     var placeholderAttrs__soy20 = function placeholderAttrs__soy20() {
-      if (!loading_) {
+      if (!_loading) {
         incrementalDom.attr('hidden', '');
       }
       incrementalDom.attr('ref', 'placeholder');
@@ -54831,7 +54839,7 @@ goog.loadModule(function (exports) {
   exports.render = $render;
   /**
    * @typedef {{
-   *  loading_: (boolean|null|undefined),
+   *  _loading: (boolean|null|undefined),
    * }}
    */
   $render.Params;
@@ -54863,8 +54871,8 @@ goog.loadModule(function (exports) {
     $loading.soyTemplateName = 'ClayChart.loading';
   }
 
-  exports.render.params = ["loading_"];
-  exports.render.types = { "loading_": "bool" };
+  exports.render.params = ["_loading"];
+  exports.render.types = { "_loading": "bool" };
   exports.loading.params = [];
   exports.loading.types = {};
   exports.templates = templates = exports;
@@ -54949,19 +54957,19 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     opt_data = opt_data || {};
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
-    var height_ = soy.asserts.assertType(opt_data.height_ == null || goog.isString(opt_data.height_) || opt_data.height_ instanceof goog.soy.data.SanitizedContent, 'height_', opt_data.height_, '!goog.soy.data.SanitizedContent|null|string|undefined');
+    var _height = soy.asserts.assertType(opt_data._height == null || goog.isString(opt_data._height) || opt_data._height instanceof goog.soy.data.SanitizedContent, '_height', opt_data._height, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
-    var width_ = soy.asserts.assertType(opt_data.width_ == null || goog.isString(opt_data.width_) || opt_data.width_ instanceof goog.soy.data.SanitizedContent, 'width_', opt_data.width_, '!goog.soy.data.SanitizedContent|null|string|undefined');
+    var _width = soy.asserts.assertType(opt_data._width == null || goog.isString(opt_data._width) || opt_data._width instanceof goog.soy.data.SanitizedContent, '_width', opt_data._width, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('style', 'width:' + width_ + ';height:' + height_);
+    incrementalDom.attr('style', 'width:' + _width + ';height:' + _height);
     incrementalDom.elementOpenEnd();
     incrementalDom.elementClose('div');
   };
   exports.render = $render;
   /**
    * @typedef {{
-   *  height_: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  width_: (!goog.soy.data.SanitizedContent|null|string|undefined),
+   *  _height: (!goog.soy.data.SanitizedContent|null|string|undefined),
+   *  _width: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
   $render.Params;
@@ -54969,8 +54977,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayGeomap.render';
   }
 
-  exports.render.params = ["height_", "width_"];
-  exports.render.types = { "height_": "string", "width_": "string" };
+  exports.render.params = ["_height", "_width"];
+  exports.render.types = { "_height": "string", "_width": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -55296,34 +55304,38 @@ goog.loadModule(function (exports) {
     var $$temp;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleActionClicked = opt_data._handleActionClicked;
+    /** @type {*|null|undefined} */
+    var _handleCreationButtonClicked = opt_data._handleCreationButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleDeselectAllClicked = opt_data._handleDeselectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleFilterDoneClicked = opt_data._handleFilterDoneClicked;
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
+    /** @type {*|null|undefined} */
+    var _handleSearch = opt_data._handleSearch;
+    /** @type {*|null|undefined} */
+    var _handleSelectAllClicked = opt_data._handleSelectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleSelectPageCheckboxChanged = opt_data._handleSelectPageCheckboxChanged;
+    /** @type {*|null|undefined} */
+    var _handleSortingButtonClicked = opt_data._handleSortingButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleViewTypeClicked = opt_data._handleViewTypeClicked;
+    /** @type {!Array<?>|null|undefined} */
+    var _selectedItems = soy.asserts.assertType(opt_data._selectedItems == null || goog.isArray(opt_data._selectedItems), '_selectedItems', opt_data._selectedItems, '!Array<?>|null|undefined');
+    /** @type {null|number|undefined} */
+    var _totalItems = soy.asserts.assertType(opt_data._totalItems == null || goog.isNumber(opt_data._totalItems), '_totalItems', opt_data._totalItems, 'null|number|undefined');
     /** @type {!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    /** @type {null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
-    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu), 'creationMenu', opt_data.creationMenu, 'null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
+    /** @type {!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
+    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu) || goog.isBoolean(opt_data.creationMenu) || opt_data.creationMenu === 1 || opt_data.creationMenu === 0 || goog.isString(opt_data.creationMenu) || opt_data.creationMenu instanceof goog.soy.data.SanitizedContent, 'creationMenu', opt_data.creationMenu, '!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var filterItems = soy.asserts.assertType(opt_data.filterItems == null || goog.isArray(opt_data.filterItems), 'filterItems', opt_data.filterItems, '!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleActionClicked_ = opt_data.handleActionClicked_;
-    /** @type {*|null|undefined} */
-    var handleCreationButtonClicked_ = opt_data.handleCreationButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleDeselectAllClicked_ = opt_data.handleDeselectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleFilterDoneClicked_ = opt_data.handleFilterDoneClicked_;
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
-    /** @type {*|null|undefined} */
-    var handleSearch_ = opt_data.handleSearch_;
-    /** @type {*|null|undefined} */
-    var handleSelectAllClicked_ = opt_data.handleSelectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleSelectPageCheckboxChanged_ = opt_data.handleSelectPageCheckboxChanged_;
-    /** @type {*|null|undefined} */
-    var handleSortingButtonClicked_ = opt_data.handleSortingButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleViewTypeClicked_ = opt_data.handleViewTypeClicked_;
     /** @type {boolean|null|undefined} */
     var hideFiltersDoneButton = soy.asserts.assertType(opt_data.hideFiltersDoneButton == null || goog.isBoolean(opt_data.hideFiltersDoneButton) || opt_data.hideFiltersDoneButton === 1 || opt_data.hideFiltersDoneButton === 0, 'hideFiltersDoneButton', opt_data.hideFiltersDoneButton, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -55338,16 +55350,12 @@ goog.loadModule(function (exports) {
     var searchInputName = soy.asserts.assertType(opt_data.searchInputName == null || goog.isString(opt_data.searchInputName) || opt_data.searchInputName instanceof goog.soy.data.SanitizedContent, 'searchInputName', opt_data.searchInputName, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
-    /** @type {!Array<?>|null|undefined} */
-    var selectedItems_ = soy.asserts.assertType(opt_data.selectedItems_ == null || goog.isArray(opt_data.selectedItems_), 'selectedItems_', opt_data.selectedItems_, '!Array<?>|null|undefined');
     /** @type {null|number|undefined} */
     var selectedView = soy.asserts.assertType(opt_data.selectedView == null || goog.isNumber(opt_data.selectedView), 'selectedView', opt_data.selectedView, 'null|number|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var sortingOrder = soy.asserts.assertType(opt_data.sortingOrder == null || goog.isString(opt_data.sortingOrder) || opt_data.sortingOrder instanceof goog.soy.data.SanitizedContent, 'sortingOrder', opt_data.sortingOrder, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var title = soy.asserts.assertType(opt_data.title == null || goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {null|number|undefined} */
-    var totalItems_ = soy.asserts.assertType(opt_data.totalItems_ == null || goog.isNumber(opt_data.totalItems_), 'totalItems_', opt_data.totalItems_, 'null|number|undefined');
     /** @type {!Array<{active: boolean, contentRenderer: (!goog.soy.data.SanitizedContent|string), disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), schema: ?,}>|null|undefined} */
     var views = soy.asserts.assertType(opt_data.views == null || goog.isArray(opt_data.views), 'views', opt_data.views, '!Array<{active: boolean, contentRenderer: (!goog.soy.data.SanitizedContent|string), disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), schema: ?,}>|null|undefined');
     var attributes__soy45 = function attributes__soy45() {
@@ -55360,10 +55368,10 @@ goog.loadModule(function (exports) {
     attributes__soy45();
     incrementalDom.elementOpenEnd();
     if (items) {
-      $templateAlias1({ actionItems: actionItems, creationMenu: creationMenu, events: { actionClicked: handleActionClicked_, creationButtonClicked: handleCreationButtonClicked_, deselectAllClicked: handleDeselectAllClicked_, filterDoneClicked: handleFilterDoneClicked_, search: handleSearch_, selectAllClicked: handleSelectAllClicked_, selectPageCheckboxChanged: handleSelectPageCheckboxChanged_, sortingButtonClicked: handleSortingButtonClicked_, viewTypeClicked: handleViewTypeClicked_ }, filterItems: filterItems, hideFiltersDoneButton: hideFiltersDoneButton, ref: 'managementToolbar', searchActionURL: searchActionURL, searchFormName: searchFormName, searchInputName: searchInputName, selectable: selectable, selectedItems: selectedItems_ ? selectedItems_.length : 0, sortingOrder: sortingOrder, spritemap: spritemap, totalItems: totalItems_, viewTypes: views }, null, opt_ijData);
+      $templateAlias1({ actionItems: actionItems, creationMenu: creationMenu, events: { actionClicked: _handleActionClicked, creationButtonClicked: _handleCreationButtonClicked, deselectAllClicked: _handleDeselectAllClicked, filterDoneClicked: _handleFilterDoneClicked, search: _handleSearch, selectAllClicked: _handleSelectAllClicked, selectPageCheckboxChanged: _handleSelectPageCheckboxChanged, sortingButtonClicked: _handleSortingButtonClicked, viewTypeClicked: _handleViewTypeClicked }, filterItems: filterItems, hideFiltersDoneButton: hideFiltersDoneButton, ref: 'managementToolbar', searchActionURL: searchActionURL, searchFormName: searchFormName, searchInputName: searchInputName, selectable: selectable, selectedItems: _selectedItems ? _selectedItems.length : 0, sortingOrder: sortingOrder, spritemap: spritemap, totalItems: _totalItems, viewTypes: views }, null, opt_ijData);
       if (views && selectedView != null) {
         var variant__soy72 = ($$temp = views[selectedView].contentRenderer) == null ? '' : $$temp;
-        soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDatasetDisplay.List.idom'), variant__soy72, false)({ handleItemToggled_: handleItemToggled_, items: items, schema: views[selectedView].schema, selectable: selectable, spritemap: spritemap, title: title }, null, opt_ijData);
+        soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDatasetDisplay.List.idom'), variant__soy72, false)({ _handleItemToggled: _handleItemToggled, items: items, schema: views[selectedView].schema, selectable: selectable, spritemap: spritemap, title: title }, null, opt_ijData);
       }
     }
     incrementalDom.elementClose('div');
@@ -55372,20 +55380,22 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleActionClicked: (*|null|undefined),
+   *  _handleCreationButtonClicked: (*|null|undefined),
+   *  _handleDeselectAllClicked: (*|null|undefined),
+   *  _handleFilterDoneClicked: (*|null|undefined),
+   *  _handleItemToggled: (*|null|undefined),
+   *  _handleSearch: (*|null|undefined),
+   *  _handleSelectAllClicked: (*|null|undefined),
+   *  _handleSelectPageCheckboxChanged: (*|null|undefined),
+   *  _handleSortingButtonClicked: (*|null|undefined),
+   *  _handleViewTypeClicked: (*|null|undefined),
+   *  _selectedItems: (!Array<?>|null|undefined),
+   *  _totalItems: (null|number|undefined),
    *  actionItems: (!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
-   *  creationMenu: (null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
+   *  creationMenu: (!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  filterItems: (!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
-   *  handleActionClicked_: (*|null|undefined),
-   *  handleCreationButtonClicked_: (*|null|undefined),
-   *  handleDeselectAllClicked_: (*|null|undefined),
-   *  handleFilterDoneClicked_: (*|null|undefined),
-   *  handleItemToggled_: (*|null|undefined),
-   *  handleSearch_: (*|null|undefined),
-   *  handleSelectAllClicked_: (*|null|undefined),
-   *  handleSelectPageCheckboxChanged_: (*|null|undefined),
-   *  handleSortingButtonClicked_: (*|null|undefined),
-   *  handleViewTypeClicked_: (*|null|undefined),
    *  hideFiltersDoneButton: (boolean|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  items: (?|undefined),
@@ -55393,11 +55403,9 @@ goog.loadModule(function (exports) {
    *  searchFormName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchInputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  selectable: (boolean|null|undefined),
-   *  selectedItems_: (!Array<?>|null|undefined),
    *  selectedView: (null|number|undefined),
    *  sortingOrder: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  title: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  totalItems_: (null|number|undefined),
    *  views: (!Array<{active: boolean, contentRenderer: (!goog.soy.data.SanitizedContent|string), disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), schema: ?,}>|null|undefined),
    * }}
    */
@@ -55416,7 +55424,7 @@ goog.loadModule(function (exports) {
   var __deltemplate__ClayDatasetDisplay_List_ = function __deltemplate__ClayDatasetDisplay_List_(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {*} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {?} */
     var items = opt_data.items;
     /** @type {?} */
@@ -55431,7 +55439,7 @@ goog.loadModule(function (exports) {
   exports.__deltemplate__ClayDatasetDisplay_List_ = __deltemplate__ClayDatasetDisplay_List_;
   /**
    * @typedef {{
-   *  handleItemToggled_: *,
+   *  _handleItemToggled: *,
    *  items: ?,
    *  schema: ?,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
@@ -55455,7 +55463,7 @@ goog.loadModule(function (exports) {
   var __deltemplate__ClayDatasetDisplay_List_cards = function __deltemplate__ClayDatasetDisplay_List_cards(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {*} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {?} */
     var items = opt_data.items;
     /** @type {?} */
@@ -55470,14 +55478,14 @@ goog.loadModule(function (exports) {
     incrementalDom.attr('class', 'container container-view');
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpen('form');
-    $templateAlias2({ events: { itemToggled: handleItemToggled_ }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+    $templateAlias2({ events: { itemToggled: _handleItemToggled }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
     incrementalDom.elementClose('form');
     incrementalDom.elementClose('div');
   };
   exports.__deltemplate__ClayDatasetDisplay_List_cards = __deltemplate__ClayDatasetDisplay_List_cards;
   /**
    * @typedef {{
-   *  handleItemToggled_: *,
+   *  _handleItemToggled: *,
    *  items: ?,
    *  schema: ?,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
@@ -55501,7 +55509,7 @@ goog.loadModule(function (exports) {
   var __deltemplate__ClayDatasetDisplay_List_list = function __deltemplate__ClayDatasetDisplay_List_list(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {*} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {?} */
     var items = opt_data.items;
     /** @type {?} */
@@ -55516,14 +55524,14 @@ goog.loadModule(function (exports) {
     incrementalDom.attr('class', 'container container-view');
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpen('form');
-    $templateAlias3({ events: { itemToggled: handleItemToggled_ }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+    $templateAlias3({ events: { itemToggled: _handleItemToggled }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
     incrementalDom.elementClose('form');
     incrementalDom.elementClose('div');
   };
   exports.__deltemplate__ClayDatasetDisplay_List_list = __deltemplate__ClayDatasetDisplay_List_list;
   /**
    * @typedef {{
-   *  handleItemToggled_: *,
+   *  _handleItemToggled: *,
    *  items: ?,
    *  schema: ?,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
@@ -55547,7 +55555,7 @@ goog.loadModule(function (exports) {
   var __deltemplate__ClayDatasetDisplay_List_table = function __deltemplate__ClayDatasetDisplay_List_table(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {*} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {?} */
     var items = opt_data.items;
     /** @type {?} */
@@ -55562,14 +55570,14 @@ goog.loadModule(function (exports) {
     incrementalDom.attr('class', 'container container-no-gutters-sm-down container-view');
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpen('form');
-    $templateAlias4({ events: { itemToggled: handleItemToggled_ }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+    $templateAlias4({ events: { itemToggled: _handleItemToggled }, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
     incrementalDom.elementClose('form');
     incrementalDom.elementClose('div');
   };
   exports.__deltemplate__ClayDatasetDisplay_List_table = __deltemplate__ClayDatasetDisplay_List_table;
   /**
    * @typedef {{
-   *  handleItemToggled_: *,
+   *  _handleItemToggled: *,
    *  items: ?,
    *  schema: ?,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
@@ -55583,8 +55591,8 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayDatasetDisplay.List.idom'), 'table', 0, __deltemplate__ClayDatasetDisplay_List_table);
 
-  exports.render.params = ["spritemap", "actionItems", "creationMenu", "elementClasses", "filterItems", "handleActionClicked_", "handleCreationButtonClicked_", "handleDeselectAllClicked_", "handleFilterDoneClicked_", "handleItemToggled_", "handleSearch_", "handleSelectAllClicked_", "handleSelectPageCheckboxChanged_", "handleSortingButtonClicked_", "handleViewTypeClicked_", "hideFiltersDoneButton", "id", "items", "searchActionURL", "searchFormName", "searchInputName", "selectable", "selectedItems_", "selectedView", "sortingOrder", "title", "totalItems_", "views"];
-  exports.render.types = { "spritemap": "string", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "creationMenu": "[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "handleActionClicked_": "any", "handleCreationButtonClicked_": "any", "handleDeselectAllClicked_": "any", "handleFilterDoneClicked_": "any", "handleItemToggled_": "any", "handleSearch_": "any", "handleSelectAllClicked_": "any", "handleSelectPageCheckboxChanged_": "any", "handleSortingButtonClicked_": "any", "handleViewTypeClicked_": "any", "hideFiltersDoneButton": "bool", "id": "string", "items": "?", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "selectedItems_": "list<?>", "selectedView": "int", "sortingOrder": "string", "title": "string", "totalItems_": "number", "views": "list<[\n\t\tactive: bool,\n\t\tcontentRenderer: string,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tschema: ?\n\t]>" };
+  exports.render.params = ["spritemap", "_handleActionClicked", "_handleCreationButtonClicked", "_handleDeselectAllClicked", "_handleFilterDoneClicked", "_handleItemToggled", "_handleSearch", "_handleSelectAllClicked", "_handleSelectPageCheckboxChanged", "_handleSortingButtonClicked", "_handleViewTypeClicked", "_selectedItems", "_totalItems", "actionItems", "creationMenu", "elementClasses", "filterItems", "hideFiltersDoneButton", "id", "items", "searchActionURL", "searchFormName", "searchInputName", "selectable", "selectedView", "sortingOrder", "title", "views"];
+  exports.render.types = { "spritemap": "string", "_handleActionClicked": "any", "_handleCreationButtonClicked": "any", "_handleDeselectAllClicked": "any", "_handleFilterDoneClicked": "any", "_handleItemToggled": "any", "_handleSearch": "any", "_handleSelectAllClicked": "any", "_handleSelectPageCheckboxChanged": "any", "_handleSortingButtonClicked": "any", "_handleViewTypeClicked": "any", "_selectedItems": "list<?>", "_totalItems": "number", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "creationMenu": "bool|string|[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "hideFiltersDoneButton": "bool", "id": "string", "items": "?", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "selectedView": "int", "sortingOrder": "string", "title": "string", "views": "list<[\n\t\tactive: bool,\n\t\tcontentRenderer: string,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tschema: ?\n\t]>" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -55672,6 +55680,10 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleButtonClick = opt_data._handleButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {?} */
     var button = opt_data.button;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -55682,10 +55694,6 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var expanded = soy.asserts.assertType(opt_data.expanded == null || goog.isBoolean(opt_data.expanded) || opt_data.expanded === 1 || opt_data.expanded === 0, 'expanded', opt_data.expanded, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleButtonClick_ = opt_data.handleButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var helpText = soy.asserts.assertType(opt_data.helpText == null || goog.isString(opt_data.helpText) || opt_data.helpText instanceof goog.soy.data.SanitizedContent, 'helpText', opt_data.helpText, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -55698,20 +55706,20 @@ goog.loadModule(function (exports) {
     var trigger__soy30 = function trigger__soy30() {
       $templateAlias1({ spritemap: spritemap, symbol: 'ellipsis-v' }, null, opt_ijData);
     };
-    $templateAlias2({ button: button, caption: caption, disabled: disabled, elementClasses: dropdownElementClasses__soy23, events: { buttonClicked: handleButtonClick_, itemClicked: handleItemClick_ }, expanded: expanded, helpText: helpText, id: id, items: items, itemsIconAlignment: itemsIconAlignment, label: trigger__soy30, ref: 'dropdown', spritemap: spritemap }, null, opt_ijData);
+    $templateAlias2({ button: button, caption: caption, disabled: disabled, elementClasses: dropdownElementClasses__soy23, events: { buttonClicked: _handleButtonClick, itemClicked: _handleItemClick }, expanded: expanded, helpText: helpText, id: id, items: items, itemsIconAlignment: itemsIconAlignment, label: trigger__soy30, ref: 'dropdown', spritemap: spritemap }, null, opt_ijData);
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  items: !Array<?>,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleButtonClick: (*|null|undefined),
+   *  _handleItemClick: (*|null|undefined),
    *  button: (?|undefined),
    *  caption: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  expanded: (boolean|null|undefined),
-   *  handleButtonClick_: (*|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  helpText: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  itemsIconAlignment: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -55722,8 +55730,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayActionsDropdown.render';
   }
 
-  exports.render.params = ["items", "spritemap", "button", "caption", "disabled", "elementClasses", "expanded", "handleButtonClick_", "handleItemClick_", "helpText", "id", "itemsIconAlignment"];
-  exports.render.types = { "items": "list<?>", "spritemap": "string", "button": "?", "caption": "string", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "handleButtonClick_": "any", "handleItemClick_": "any", "helpText": "string", "id": "string", "itemsIconAlignment": "string" };
+  exports.render.params = ["items", "spritemap", "_handleButtonClick", "_handleItemClick", "button", "caption", "disabled", "elementClasses", "expanded", "helpText", "id", "itemsIconAlignment"];
+  exports.render.types = { "items": "list<?>", "spritemap": "string", "_handleButtonClick": "any", "_handleItemClick": "any", "button": "?", "caption": "string", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "helpText": "string", "id": "string", "itemsIconAlignment": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -55811,6 +55819,10 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleButtonClick = opt_data._handleButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {?} */
     var button = opt_data.button;
     /** @type {boolean|null|undefined} */
@@ -55819,10 +55831,6 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var expanded = soy.asserts.assertType(opt_data.expanded == null || goog.isBoolean(opt_data.expanded) || opt_data.expanded === 1 || opt_data.expanded === 0, 'expanded', opt_data.expanded, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleButtonClick_ = opt_data.handleButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var icon = soy.asserts.assertType(opt_data.icon == null || goog.isString(opt_data.icon) || opt_data.icon instanceof goog.soy.data.SanitizedContent, 'icon', opt_data.icon, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -55848,19 +55856,19 @@ goog.loadModule(function (exports) {
         $templateAlias1({ spritemap: spritemap, symbol: 'caret-bottom' }, null, opt_ijData);
       }
     };
-    $templateAlias2({ button: button, disabled: disabled, elementClasses: elementClasses, events: { buttonClicked: handleButtonClick_, itemClicked: handleItemClick_ }, expanded: expanded, id: id, items: items, itemsIconAlignment: itemsIconAlignment, label: trigger__soy88, ref: 'dropdown', searchable: searchable, spritemap: spritemap, style: style, triggerClasses: triggerClasses }, null, opt_ijData);
+    $templateAlias2({ button: button, disabled: disabled, elementClasses: elementClasses, events: { buttonClicked: _handleButtonClick, itemClicked: _handleItemClick }, expanded: expanded, id: id, items: items, itemsIconAlignment: itemsIconAlignment, label: trigger__soy88, ref: 'dropdown', searchable: searchable, spritemap: spritemap, style: style, triggerClasses: triggerClasses }, null, opt_ijData);
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  items: !Array<?>,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleButtonClick: (*|null|undefined),
+   *  _handleItemClick: (*|null|undefined),
    *  button: (?|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  expanded: (boolean|null|undefined),
-   *  handleButtonClick_: (*|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  itemsIconAlignment: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -55875,8 +55883,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayDropdown.render';
   }
 
-  exports.render.params = ["items", "spritemap", "button", "disabled", "elementClasses", "expanded", "handleButtonClick_", "handleItemClick_", "icon", "id", "itemsIconAlignment", "label", "searchable", "style", "triggerClasses"];
-  exports.render.types = { "items": "list<?>", "spritemap": "string", "button": "?", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "handleButtonClick_": "any", "handleItemClick_": "any", "icon": "string", "id": "string", "itemsIconAlignment": "string", "label": "html|string", "searchable": "bool", "style": "string", "triggerClasses": "string" };
+  exports.render.params = ["items", "spritemap", "_handleButtonClick", "_handleItemClick", "button", "disabled", "elementClasses", "expanded", "icon", "id", "itemsIconAlignment", "label", "searchable", "style", "triggerClasses"];
+  exports.render.types = { "items": "list<?>", "spritemap": "string", "_handleButtonClick": "any", "_handleItemClick": "any", "button": "?", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "icon": "string", "id": "string", "itemsIconAlignment": "string", "label": "html|string", "searchable": "bool", "style": "string", "triggerClasses": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -55979,6 +55987,12 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
     /** @type {!goog.soy.data.SanitizedContent|function()|string} */
     var label = soy.asserts.assertType(goog.isFunction(opt_data.label) || goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|function()|string');
+    /** @type {*|null|undefined} */
+    var _handleButtonClick = opt_data._handleButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
+    /** @type {*|null|undefined} */
+    var _handleSearch = opt_data._handleSearch;
     /** @type {?} */
     var button = opt_data.button;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -55991,12 +56005,6 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var expanded = soy.asserts.assertType(opt_data.expanded == null || goog.isBoolean(opt_data.expanded) || opt_data.expanded === 1 || opt_data.expanded === 0, 'expanded', opt_data.expanded, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleButtonClick_ = opt_data.handleButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
-    /** @type {*|null|undefined} */
-    var handleSearch_ = opt_data.handleSearch_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var helpText = soy.asserts.assertType(opt_data.helpText == null || goog.isString(opt_data.helpText) || opt_data.helpText instanceof goog.soy.data.SanitizedContent, 'helpText', opt_data.helpText, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56023,7 +56031,7 @@ goog.loadModule(function (exports) {
     attributes__soy145();
     incrementalDom.elementOpenEnd();
     $trigger({ classes: triggerClasses, disabled: disabled, expanded: expanded, label: label, style: style }, null, opt_ijData);
-    $sections({ button: button, caption: caption, contentRenderer: ($$temp = contentRenderer) == null ? '' : $$temp, expanded: expanded, handleButtonClick_: handleButtonClick_, handleItemClick_: handleItemClick_, handleSearch_: handleSearch_, helpText: helpText, items: items, itemsIconAlignment: itemsIconAlignment, portalElementId: portalElementId, searchable: searchable, spritemap: spritemap }, null, opt_ijData);
+    $sections({ _handleButtonClick: _handleButtonClick, _handleItemClick: _handleItemClick, _handleSearch: _handleSearch, button: button, caption: caption, contentRenderer: ($$temp = contentRenderer) == null ? '' : $$temp, expanded: expanded, helpText: helpText, items: items, itemsIconAlignment: itemsIconAlignment, portalElementId: portalElementId, searchable: searchable, spritemap: spritemap }, null, opt_ijData);
     incrementalDom.elementClose('div');
   };
   exports.render = $render;
@@ -56031,15 +56039,15 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  items: !Array<?>,
    *  label: (!goog.soy.data.SanitizedContent|function()|string),
+   *  _handleButtonClick: (*|null|undefined),
+   *  _handleItemClick: (*|null|undefined),
+   *  _handleSearch: (*|null|undefined),
    *  button: (?|undefined),
    *  caption: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  expanded: (boolean|null|undefined),
-   *  handleButtonClick_: (*|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
-   *  handleSearch_: (*|null|undefined),
    *  helpText: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  itemsIconAlignment: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56067,7 +56075,7 @@ goog.loadModule(function (exports) {
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {*|null|undefined} */
-    var handleSearch_ = opt_data.handleSearch_;
+    var _handleSearch = opt_data._handleSearch;
     incrementalDom.elementOpen('form');
     incrementalDom.elementOpenStart('div');
     incrementalDom.attr('class', 'dropdown-section');
@@ -56081,7 +56089,7 @@ goog.loadModule(function (exports) {
     incrementalDom.elementOpenStart('input');
     incrementalDom.attr('aria-label', 'Search for...');
     incrementalDom.attr('class', 'form-control input-group-inset input-group-inset-after');
-    incrementalDom.attr('data-oninput', handleSearch_);
+    incrementalDom.attr('data-oninput', _handleSearch);
     incrementalDom.attr('placeholder', 'Search for...');
     incrementalDom.attr('type', 'text');
     incrementalDom.attr('ref', 'searchInput');
@@ -56101,7 +56109,7 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
-   *  handleSearch_: (*|null|undefined),
+   *  _handleSearch: (*|null|undefined),
    * }}
    */
   $search.Params;
@@ -56121,6 +56129,12 @@ goog.loadModule(function (exports) {
     var $$temp;
     /** @type {!Array<?>} */
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
+    /** @type {*|null|undefined} */
+    var _handleButtonClick = opt_data._handleButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
+    /** @type {*|null|undefined} */
+    var _handleSearch = opt_data._handleSearch;
     /** @type {?} */
     var button = opt_data.button;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56129,12 +56143,6 @@ goog.loadModule(function (exports) {
     var contentRenderer = soy.asserts.assertType(opt_data.contentRenderer == null || goog.isString(opt_data.contentRenderer) || opt_data.contentRenderer instanceof goog.soy.data.SanitizedContent, 'contentRenderer', opt_data.contentRenderer, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var expanded = soy.asserts.assertType(opt_data.expanded == null || goog.isBoolean(opt_data.expanded) || opt_data.expanded === 1 || opt_data.expanded === 0, 'expanded', opt_data.expanded, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleButtonClick_ = opt_data.handleButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
-    /** @type {*|null|undefined} */
-    var handleSearch_ = opt_data.handleSearch_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var helpText = soy.asserts.assertType(opt_data.helpText == null || goog.isString(opt_data.helpText) || opt_data.helpText instanceof goog.soy.data.SanitizedContent, 'helpText', opt_data.helpText, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56199,7 +56207,7 @@ goog.loadModule(function (exports) {
         incrementalDom.elementOpenStart('div');
         incrementalDom.attr('class', 'dropdown-section');
         incrementalDom.elementOpenEnd();
-        $templateAlias1({ block: true, events: { click: handleButtonClick_ }, label: button.label, ref: 'dropdownButton', style: button.style, type: ($$temp = button.type) == null ? 'button' : $$temp }, null, opt_ijData);
+        $templateAlias1({ block: true, events: { click: _handleButtonClick }, label: button.label, ref: 'dropdownButton', style: button.style, type: ($$temp = button.type) == null ? 'button' : $$temp }, null, opt_ijData);
         incrementalDom.elementClose('div');
         incrementalDom.elementClose('form');
       } else {
@@ -56217,13 +56225,13 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  items: !Array<?>,
+   *  _handleButtonClick: (*|null|undefined),
+   *  _handleItemClick: (*|null|undefined),
+   *  _handleSearch: (*|null|undefined),
    *  button: (?|undefined),
    *  caption: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  expanded: (boolean|null|undefined),
-   *  handleButtonClick_: (*|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
-   *  handleSearch_: (*|null|undefined),
    *  helpText: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  itemsIconAlignment: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  portalElementId: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56303,14 +56311,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var label = soy.asserts.assertType(goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {boolean|null|undefined} */
     var active = soy.asserts.assertType(opt_data.active == null || goog.isBoolean(opt_data.active) || opt_data.active === 1 || opt_data.active === 0, 'active', opt_data.active, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var checked = soy.asserts.assertType(opt_data.checked == null || goog.isBoolean(opt_data.checked) || opt_data.checked === 1 || opt_data.checked === 0, 'checked', opt_data.checked, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56357,7 +56365,7 @@ goog.loadModule(function (exports) {
       $templateAlias3({ elementClasses: 'dropdown-item' + (active ? ' active' : '') + (disabled ? ' disabled' : ''), href: '' + $tmp, label: param380 }, null, opt_ijData);
     };
     var itemAttributes__soy388 = function itemAttributes__soy388() {
-      incrementalDom.attr('data-onclick', handleItemClick_);
+      incrementalDom.attr('data-onclick', _handleItemClick);
     };
     incrementalDom.elementOpenStart('li');
     itemAttributes__soy388();
@@ -56377,10 +56385,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  label: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemClick: (*|null|undefined),
    *  active: (boolean|null|undefined),
    *  checked: (boolean|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56408,14 +56416,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var label = soy.asserts.assertType(goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {boolean|null|undefined} */
     var active = soy.asserts.assertType(opt_data.active == null || goog.isBoolean(opt_data.active) || opt_data.active === 1 || opt_data.active === 0, 'active', opt_data.active, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var checked = soy.asserts.assertType(opt_data.checked == null || goog.isBoolean(opt_data.checked) || opt_data.checked === 1 || opt_data.checked === 0, 'checked', opt_data.checked, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56437,7 +56445,7 @@ goog.loadModule(function (exports) {
     };
     var itemAttributes__soy431 = function itemAttributes__soy431() {
       incrementalDom.attr('class', 'dropdown-item' + (active || checked ? ' active' : ''));
-      incrementalDom.attr('data-onclick', handleItemClick_);
+      incrementalDom.attr('data-onclick', _handleItemClick);
     };
     incrementalDom.elementOpenStart('li');
     itemAttributes__soy431();
@@ -56457,10 +56465,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  label: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemClick: (*|null|undefined),
    *  active: (boolean|null|undefined),
    *  checked: (boolean|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56488,14 +56496,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var label = soy.asserts.assertType(goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {boolean|null|undefined} */
     var active = soy.asserts.assertType(opt_data.active == null || goog.isBoolean(opt_data.active) || opt_data.active === 1 || opt_data.active === 0, 'active', opt_data.active, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var checked = soy.asserts.assertType(opt_data.checked == null || goog.isBoolean(opt_data.checked) || opt_data.checked === 1 || opt_data.checked === 0, 'checked', opt_data.checked, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56536,10 +56544,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  label: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemClick: (*|null|undefined),
    *  active: (boolean|null|undefined),
    *  checked: (boolean|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56567,14 +56575,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var label = soy.asserts.assertType(goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {boolean|null|undefined} */
     var active = soy.asserts.assertType(opt_data.active == null || goog.isBoolean(opt_data.active) || opt_data.active === 1 || opt_data.active === 0, 'active', opt_data.active, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var checked = soy.asserts.assertType(opt_data.checked == null || goog.isBoolean(opt_data.checked) || opt_data.checked === 1 || opt_data.checked === 0, 'checked', opt_data.checked, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56596,7 +56604,7 @@ goog.loadModule(function (exports) {
     };
     var itemAttributes__soy509 = function itemAttributes__soy509() {
       incrementalDom.attr('class', 'dropdown-item' + (active || checked ? ' active' : ''));
-      incrementalDom.attr('data-onclick', handleItemClick_);
+      incrementalDom.attr('data-onclick', _handleItemClick);
     };
     incrementalDom.elementOpenStart('li');
     itemAttributes__soy509();
@@ -56616,10 +56624,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  label: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemClick: (*|null|undefined),
    *  active: (boolean|null|undefined),
    *  checked: (boolean|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56647,14 +56655,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var label = soy.asserts.assertType(goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {boolean|null|undefined} */
     var active = soy.asserts.assertType(opt_data.active == null || goog.isBoolean(opt_data.active) || opt_data.active === 1 || opt_data.active === 0, 'active', opt_data.active, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var checked = soy.asserts.assertType(opt_data.checked == null || goog.isBoolean(opt_data.checked) || opt_data.checked === 1 || opt_data.checked === 0, 'checked', opt_data.checked, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56687,7 +56695,7 @@ goog.loadModule(function (exports) {
       incrementalDom.elementOpenStart('ul');
       incrementalDom.attr('class', 'list-unstyled');
       incrementalDom.elementOpenEnd();
-      soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDropdownBase.Items.idom'), '', false)({ contentRenderer: 'radio', handleItemClick_: handleItemClick_, items: items, itemsIconAlignment: itemsIconAlignment, spritemap: spritemap }, null, opt_ijData);
+      soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDropdownBase.Items.idom'), '', false)({ _handleItemClick: _handleItemClick, contentRenderer: 'radio', items: items, itemsIconAlignment: itemsIconAlignment, spritemap: spritemap }, null, opt_ijData);
       incrementalDom.elementClose('ul');
     }
     incrementalDom.elementClose('li');
@@ -56704,10 +56712,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  label: (!goog.soy.data.SanitizedContent|string),
+   *  _handleItemClick: (*|null|undefined),
    *  active: (boolean|null|undefined),
    *  checked: (boolean|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  icon: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -56735,10 +56743,10 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!Array<?>} */
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
+    /** @type {*|null|undefined} */
+    var _handleItemClick = opt_data._handleItemClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var contentRenderer = soy.asserts.assertType(opt_data.contentRenderer == null || goog.isString(opt_data.contentRenderer) || opt_data.contentRenderer instanceof goog.soy.data.SanitizedContent, 'contentRenderer', opt_data.contentRenderer, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemClick_ = opt_data.handleItemClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var itemsIconAlignment = soy.asserts.assertType(opt_data.itemsIconAlignment == null || goog.isString(opt_data.itemsIconAlignment) || opt_data.itemsIconAlignment instanceof goog.soy.data.SanitizedContent, 'itemsIconAlignment', opt_data.itemsIconAlignment, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -56757,15 +56765,15 @@ goog.loadModule(function (exports) {
         $tmp = 'item';
       }
       variant__soy580 += $tmp;
-      soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDropdownBase.Item.idom'), variant__soy580, false)({ active: item564Data.active, checked: item564Data.checked, disabled: item564Data.disabled, handleItemClick_: handleItemClick_, href: item564Data.href, icon: item564Data.icon, inputName: item564Data.inputName, inputValue: item564Data.inputValue, items: item564Data.items, itemsIconAlignment: itemsIconAlignment, label: item564Data.label ? '' + item564Data.label : '', separator: item564Data.separator, spritemap: spritemap }, null, opt_ijData);
+      soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayDropdownBase.Item.idom'), variant__soy580, false)({ _handleItemClick: _handleItemClick, active: item564Data.active, checked: item564Data.checked, disabled: item564Data.disabled, href: item564Data.href, icon: item564Data.icon, inputName: item564Data.inputName, inputValue: item564Data.inputValue, items: item564Data.items, itemsIconAlignment: itemsIconAlignment, label: item564Data.label ? '' + item564Data.label : '', separator: item564Data.separator, spritemap: spritemap }, null, opt_ijData);
     }
   };
   exports.__deltemplate__ClayDropdownBase_Items_ = __deltemplate__ClayDropdownBase_Items_;
   /**
    * @typedef {{
    *  items: !Array<?>,
+   *  _handleItemClick: (*|null|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemClick_: (*|null|undefined),
    *  itemsIconAlignment: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -56776,12 +56784,12 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayDropdownBase.Items.idom'), '', 0, __deltemplate__ClayDropdownBase_Items_);
 
-  exports.render.params = ["items", "label", "button", "caption", "contentRenderer", "disabled", "elementClasses", "expanded", "handleButtonClick_", "handleItemClick_", "handleSearch_", "helpText", "id", "itemsIconAlignment", "portalElementId", "searchable", "spritemap", "style", "triggerClasses"];
-  exports.render.types = { "items": "list<?>", "label": "html|string", "button": "?", "caption": "string", "contentRenderer": "string", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "handleButtonClick_": "any", "handleItemClick_": "any", "handleSearch_": "any", "helpText": "string", "id": "string", "itemsIconAlignment": "string", "portalElementId": "string", "searchable": "bool", "spritemap": "string", "style": "string", "triggerClasses": "string" };
-  exports.search.params = ["spritemap", "handleSearch_"];
-  exports.search.types = { "spritemap": "string", "handleSearch_": "any" };
-  exports.sections.params = ["items", "button", "caption", "contentRenderer", "expanded", "handleButtonClick_", "handleItemClick_", "handleSearch_", "helpText", "itemsIconAlignment", "portalElementId", "searchable", "spritemap"];
-  exports.sections.types = { "items": "list<?>", "button": "?", "caption": "string", "contentRenderer": "string", "expanded": "bool", "handleButtonClick_": "any", "handleItemClick_": "any", "handleSearch_": "any", "helpText": "string", "itemsIconAlignment": "string", "portalElementId": "string", "searchable": "bool", "spritemap": "string" };
+  exports.render.params = ["items", "label", "_handleButtonClick", "_handleItemClick", "_handleSearch", "button", "caption", "contentRenderer", "disabled", "elementClasses", "expanded", "helpText", "id", "itemsIconAlignment", "portalElementId", "searchable", "spritemap", "style", "triggerClasses"];
+  exports.render.types = { "items": "list<?>", "label": "html|string", "_handleButtonClick": "any", "_handleItemClick": "any", "_handleSearch": "any", "button": "?", "caption": "string", "contentRenderer": "string", "disabled": "bool", "elementClasses": "string", "expanded": "bool", "helpText": "string", "id": "string", "itemsIconAlignment": "string", "portalElementId": "string", "searchable": "bool", "spritemap": "string", "style": "string", "triggerClasses": "string" };
+  exports.search.params = ["spritemap", "_handleSearch"];
+  exports.search.types = { "spritemap": "string", "_handleSearch": "any" };
+  exports.sections.params = ["items", "_handleButtonClick", "_handleItemClick", "_handleSearch", "button", "caption", "contentRenderer", "expanded", "helpText", "itemsIconAlignment", "portalElementId", "searchable", "spritemap"];
+  exports.sections.types = { "items": "list<?>", "_handleButtonClick": "any", "_handleItemClick": "any", "_handleSearch": "any", "button": "?", "caption": "string", "contentRenderer": "string", "expanded": "bool", "helpText": "string", "itemsIconAlignment": "string", "portalElementId": "string", "searchable": "bool", "spritemap": "string" };
   exports.trigger.params = ["label", "classes", "disabled", "expanded", "style"];
   exports.trigger.types = { "label": "html|string", "classes": "string", "disabled": "bool", "expanded": "bool", "style": "string" };
   exports.templates = templates = exports;
@@ -56871,19 +56879,26 @@ goog.loadModule(function (exports) {
     var symbol = soy.asserts.assertType(goog.isString(opt_data.symbol) || opt_data.symbol instanceof goog.soy.data.SanitizedContent, 'symbol', opt_data.symbol, '!goog.soy.data.SanitizedContent|string');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
+    /** @type {boolean|null|undefined} */
+    var focusable = soy.asserts.assertType(opt_data.focusable == null || goog.isBoolean(opt_data.focusable) || opt_data.focusable === 1 || opt_data.focusable === 0, 'focusable', opt_data.focusable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var title = soy.asserts.assertType(opt_data.title == null || goog.isString(opt_data.title) || opt_data.title instanceof goog.soy.data.SanitizedContent, 'title', opt_data.title, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    var attributes__soy24 = function attributes__soy24() {
+    var attributes__soy31 = function attributes__soy31() {
       incrementalDom.attr('aria-hidden', 'true');
       incrementalDom.attr('class', 'lexicon-icon lexicon-icon-' + symbol + (elementClasses ? ' ' + elementClasses : ''));
+      if (focusable) {
+        incrementalDom.attr('focusable', 'true');
+      } else {
+        incrementalDom.attr('focusable', 'false');
+      }
       if (id) {
         incrementalDom.attr('id', id);
       }
     };
     incrementalDom.elementOpenStart('svg');
-    attributes__soy24();
+    attributes__soy31();
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpen('title');
     soyIdom.print(($$temp = title) == null ? ($$temp = id) == null ? symbol : $$temp : $$temp);
@@ -56900,6 +56915,7 @@ goog.loadModule(function (exports) {
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
    *  symbol: (!goog.soy.data.SanitizedContent|string),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
+   *  focusable: (boolean|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  title: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -56909,8 +56925,8 @@ goog.loadModule(function (exports) {
     $render.soyTemplateName = 'ClayIcon.render';
   }
 
-  exports.render.params = ["spritemap", "symbol", "elementClasses", "id", "title"];
-  exports.render.types = { "spritemap": "string", "symbol": "string", "elementClasses": "string", "id": "string", "title": "string" };
+  exports.render.params = ["spritemap", "symbol", "elementClasses", "focusable", "id", "title"];
+  exports.render.types = { "spritemap": "string", "symbol": "string", "elementClasses": "string", "focusable": "bool", "id": "string", "title": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -56997,12 +57013,12 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     var $$temp;
     opt_data = opt_data || {};
+    /** @type {*|null|undefined} */
+    var _handleCloseButtonClick = opt_data._handleCloseButtonClick;
     /** @type {boolean|null|undefined} */
     var closeable = soy.asserts.assertType(opt_data.closeable == null || goog.isBoolean(opt_data.closeable) || opt_data.closeable === 1 || opt_data.closeable === 0, 'closeable', opt_data.closeable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseButtonClick_ = opt_data.handleCloseButtonClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -57030,9 +57046,9 @@ goog.loadModule(function (exports) {
   exports.render = $render;
   /**
    * @typedef {{
+   *  _handleCloseButtonClick: (*|null|undefined),
    *  closeable: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCloseButtonClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  label: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -57065,10 +57081,10 @@ goog.loadModule(function (exports) {
   var $content = function $content(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     opt_data = opt_data || {};
+    /** @type {*|null|undefined} */
+    var _handleCloseButtonClick = opt_data._handleCloseButtonClick;
     /** @type {boolean|null|undefined} */
     var closeable = soy.asserts.assertType(opt_data.closeable == null || goog.isBoolean(opt_data.closeable) || opt_data.closeable === 1 || opt_data.closeable === 0, 'closeable', opt_data.closeable, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseButtonClick_ = opt_data.handleCloseButtonClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var href = soy.asserts.assertType(opt_data.href == null || goog.isString(opt_data.href) || opt_data.href instanceof goog.soy.data.SanitizedContent, 'href', opt_data.href, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -57081,14 +57097,14 @@ goog.loadModule(function (exports) {
       soyIdom.print(label);
     }
     if (closeable && spritemap) {
-      $templateAlias2({ ariaLabel: 'Close', elementClasses: 'close', events: { click: handleCloseButtonClick_ }, icon: 'times', iconAlignment: 'right', spritemap: spritemap, style: 'unstyled', type: 'button' }, null, opt_ijData);
+      $templateAlias2({ ariaLabel: 'Close', elementClasses: 'close', events: { click: _handleCloseButtonClick }, icon: 'times', iconAlignment: 'right', spritemap: spritemap, style: 'unstyled', type: 'button' }, null, opt_ijData);
     }
   };
   exports.content = $content;
   /**
    * @typedef {{
+   *  _handleCloseButtonClick: (*|null|undefined),
    *  closeable: (boolean|null|undefined),
-   *  handleCloseButtonClick_: (*|null|undefined),
    *  href: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  label: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -57111,10 +57127,10 @@ goog.loadModule(function (exports) {
     $content.soyTemplateName = 'ClayLabel.content';
   }
 
-  exports.render.params = ["closeable", "elementClasses", "handleCloseButtonClick_", "href", "id", "label", "size", "spritemap", "style"];
-  exports.render.types = { "closeable": "bool", "elementClasses": "string", "handleCloseButtonClick_": "any", "href": "string", "id": "string", "label": "string", "size": "string", "spritemap": "string", "style": "string" };
-  exports.content.params = ["closeable", "handleCloseButtonClick_", "href", "label", "spritemap"];
-  exports.content.types = { "closeable": "bool", "handleCloseButtonClick_": "any", "href": "string", "label": "string", "spritemap": "string" };
+  exports.render.params = ["_handleCloseButtonClick", "closeable", "elementClasses", "href", "id", "label", "size", "spritemap", "style"];
+  exports.render.types = { "_handleCloseButtonClick": "any", "closeable": "bool", "elementClasses": "string", "href": "string", "id": "string", "label": "string", "size": "string", "spritemap": "string", "style": "string" };
+  exports.content.params = ["_handleCloseButtonClick", "closeable", "href", "label", "spritemap"];
+  exports.content.types = { "_handleCloseButtonClick": "any", "closeable": "bool", "href": "string", "label": "string", "spritemap": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -57531,10 +57547,10 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<?>|null|undefined} */
@@ -57553,7 +57569,7 @@ goog.loadModule(function (exports) {
     attributes__soy22();
     incrementalDom.elementOpenEnd();
     if (items) {
-      $items({ groupName: id, handleItemToggled_: handleItemToggled_, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+      $items({ _handleItemToggled: _handleItemToggled, groupName: id, items: items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
     }
     incrementalDom.elementClose('ul');
   };
@@ -57561,8 +57577,8 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleItemToggled: (*|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  items: (!Array<?>|null|undefined),
    *  selectable: (boolean|null|undefined),
@@ -57587,10 +57603,10 @@ goog.loadModule(function (exports) {
     var item = opt_data.item;
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -57621,7 +57637,7 @@ goog.loadModule(function (exports) {
       } else {
         $tmp$$1 = '';
       }
-      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: item.selected, disabled: item.disabled, events: { change: handleItemToggled_ }, hideLabel: true, label: item.selected ? 'Select' : 'Deselect', name: '' + $tmp$$1, value: item[schema.inputValueField] }, null, opt_ijData);
+      $templateAlias1({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: item.selected, disabled: item.disabled, events: { change: _handleItemToggled }, hideLabel: true, label: item.selected ? 'Select' : 'Deselect', name: '' + $tmp$$1, value: item[schema.inputValueField] }, null, opt_ijData);
       incrementalDom.elementClose('div');
     }
     var fieldSchema88List = schema.fields;
@@ -57663,8 +57679,8 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  item: ?,
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -57687,10 +57703,10 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -57716,9 +57732,9 @@ goog.loadModule(function (exports) {
         soyIdom.print(item139Data.label);
         incrementalDom.elementClose('h3');
         incrementalDom.elementClose('li');
-        $items({ groupName: currentGroupName__soy154, handleItemToggled_: handleItemToggled_, items: item139Data.items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+        $items({ _handleItemToggled: _handleItemToggled, groupName: currentGroupName__soy154, items: item139Data.items, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
       } else {
-        $item({ groupName: groupName, handleItemToggled_: handleItemToggled_, item: item139Data, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
+        $item({ _handleItemToggled: _handleItemToggled, groupName: groupName, item: item139Data, schema: schema, selectable: selectable, spritemap: spritemap }, null, opt_ijData);
       }
     }
   };
@@ -57727,8 +57743,8 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  items: !Array<?>,
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, iconShapesMap: ?, iconsMap: ?, labelStylesMap: ?,}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
@@ -57921,12 +57937,12 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayList.Field.idom'), 'simple', 0, __deltemplate__ClayList_Field_simple);
 
-  exports.render.params = ["schema", "elementClasses", "handleItemToggled_", "id", "items", "selectable", "spritemap"];
-  exports.render.types = { "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "elementClasses": "string", "handleItemToggled_": "any", "id": "string", "items": "list<?>", "selectable": "bool", "spritemap": "string" };
-  exports.item.params = ["item", "schema", "groupName", "handleItemToggled_", "selectable", "spritemap"];
-  exports.item.types = { "item": "?", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "groupName": "string", "handleItemToggled_": "any", "selectable": "bool", "spritemap": "string" };
-  exports.items.params = ["items", "schema", "groupName", "handleItemToggled_", "selectable", "spritemap"];
-  exports.items.types = { "items": "list<?>", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "groupName": "string", "handleItemToggled_": "any", "selectable": "bool", "spritemap": "string" };
+  exports.render.params = ["schema", "_handleItemToggled", "elementClasses", "id", "items", "selectable", "spritemap"];
+  exports.render.types = { "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleItemToggled": "any", "elementClasses": "string", "id": "string", "items": "list<?>", "selectable": "bool", "spritemap": "string" };
+  exports.item.params = ["item", "schema", "_handleItemToggled", "groupName", "selectable", "spritemap"];
+  exports.item.types = { "item": "?", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool", "spritemap": "string" };
+  exports.items.params = ["items", "schema", "_handleItemToggled", "groupName", "selectable", "spritemap"];
+  exports.items.types = { "items": "list<?>", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\ticonsMap: ?,\n\t\t\ticonShapesMap: ?,\n\t\t\tlabelStylesMap: ?\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool", "spritemap": "string" };
   exports.quickMenu.params = ["items", "spritemap"];
   exports.quickMenu.types = { "items": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool\n\t]>", "spritemap": "string" };
   exports.templates = templates = exports;
@@ -58009,11 +58025,11 @@ goog.loadModule(function (exports) {
 
   var $templateAlias1 = _metalSoy2.default.getTemplate('ClayCheckbox.incrementaldom', 'render');
 
-  var $templateAlias4 = _metalSoy2.default.getTemplate('ClayDropdown.incrementaldom', 'render');
+  var $templateAlias6 = _metalSoy2.default.getTemplate('ClayDropdown.incrementaldom', 'render');
 
   var $templateAlias5 = _metalSoy2.default.getTemplate('ClayDropdownBase.incrementaldom', 'render');
 
-  var $templateAlias6 = _metalSoy2.default.getTemplate('ClayIcon.incrementaldom', 'render');
+  var $templateAlias4 = _metalSoy2.default.getTemplate('ClayIcon.incrementaldom', 'render');
 
   var $templateAlias7 = _metalSoy2.default.getTemplate('ClayLink.incrementaldom', 'render');
 
@@ -58029,38 +58045,42 @@ goog.loadModule(function (exports) {
     var $$temp;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleActionClicked = opt_data._handleActionClicked;
+    /** @type {*|null|undefined} */
+    var _handleCloseMobileSearchClick = opt_data._handleCloseMobileSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleCreationButtonClicked = opt_data._handleCreationButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleDeselectAllClicked = opt_data._handleDeselectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleFilterDoneButtonClick = opt_data._handleFilterDoneButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleInfoButtonClicked = opt_data._handleInfoButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleOpenMobileSearchClick = opt_data._handleOpenMobileSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleSearchSearchClick = opt_data._handleSearchSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleSelectAllClicked = opt_data._handleSelectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleSelectPageCheckboxChanged = opt_data._handleSelectPageCheckboxChanged;
+    /** @type {*|null|undefined} */
+    var _handleSortingButtonClicked = opt_data._handleSortingButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleViewTypeClicked = opt_data._handleViewTypeClicked;
+    /** @type {boolean|null|undefined} */
+    var _showSearchMobile = soy.asserts.assertType(opt_data._showSearchMobile == null || goog.isBoolean(opt_data._showSearchMobile) || opt_data._showSearchMobile === 1 || opt_data._showSearchMobile === 0, '_showSearchMobile', opt_data._showSearchMobile, 'boolean|null|undefined');
     /** @type {!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var contentRenderer = soy.asserts.assertType(opt_data.contentRenderer == null || goog.isString(opt_data.contentRenderer) || opt_data.contentRenderer instanceof goog.soy.data.SanitizedContent, 'contentRenderer', opt_data.contentRenderer, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
-    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu), 'creationMenu', opt_data.creationMenu, 'null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
+    /** @type {!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
+    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu) || goog.isBoolean(opt_data.creationMenu) || opt_data.creationMenu === 1 || opt_data.creationMenu === 0 || goog.isString(opt_data.creationMenu) || opt_data.creationMenu instanceof goog.soy.data.SanitizedContent, 'creationMenu', opt_data.creationMenu, '!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var filterItems = soy.asserts.assertType(opt_data.filterItems == null || goog.isArray(opt_data.filterItems), 'filterItems', opt_data.filterItems, '!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleActionClicked_ = opt_data.handleActionClicked_;
-    /** @type {*|null|undefined} */
-    var handleCloseMobileSearchClick_ = opt_data.handleCloseMobileSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleCreationButtonClicked_ = opt_data.handleCreationButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleDeselectAllClicked_ = opt_data.handleDeselectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleFilterDoneButtonClick_ = opt_data.handleFilterDoneButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleOpenMobileSearchClick_ = opt_data.handleOpenMobileSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleSearchSearchClick_ = opt_data.handleSearchSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleSelectAllClicked_ = opt_data.handleSelectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleSelectPageCheckboxChanged_ = opt_data.handleSelectPageCheckboxChanged_;
-    /** @type {*|null|undefined} */
-    var handleSortingButtonClicked_ = opt_data.handleSortingButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleViewTypeClicked_ = opt_data.handleViewTypeClicked_;
     /** @type {boolean|null|undefined} */
     var hideFiltersDoneButton = soy.asserts.assertType(opt_data.hideFiltersDoneButton == null || goog.isBoolean(opt_data.hideFiltersDoneButton) || opt_data.hideFiltersDoneButton === 1 || opt_data.hideFiltersDoneButton === 0, 'hideFiltersDoneButton', opt_data.hideFiltersDoneButton, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -58076,40 +58096,44 @@ goog.loadModule(function (exports) {
     /** @type {null|number|undefined} */
     var selectedItems = soy.asserts.assertType(opt_data.selectedItems == null || goog.isNumber(opt_data.selectedItems), 'selectedItems', opt_data.selectedItems, 'null|number|undefined');
     /** @type {boolean|null|undefined} */
-    var showSearch_ = soy.asserts.assertType(opt_data.showSearch_ == null || goog.isBoolean(opt_data.showSearch_) || opt_data.showSearch_ === 1 || opt_data.showSearch_ === 0, 'showSearch_', opt_data.showSearch_, 'boolean|null|undefined');
+    var showInfoButton = soy.asserts.assertType(opt_data.showInfoButton == null || goog.isBoolean(opt_data.showInfoButton) || opt_data.showInfoButton === 1 || opt_data.showInfoButton === 0, 'showInfoButton', opt_data.showInfoButton, 'boolean|null|undefined');
+    /** @type {boolean|null|undefined} */
+    var showSearch = soy.asserts.assertType(opt_data.showSearch == null || goog.isBoolean(opt_data.showSearch) || opt_data.showSearch === 1 || opt_data.showSearch === 0, 'showSearch', opt_data.showSearch, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var sortingOrder = soy.asserts.assertType(opt_data.sortingOrder == null || goog.isString(opt_data.sortingOrder) || opt_data.sortingOrder instanceof goog.soy.data.SanitizedContent, 'sortingOrder', opt_data.sortingOrder, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {null|number|undefined} */
     var totalItems = soy.asserts.assertType(opt_data.totalItems == null || goog.isNumber(opt_data.totalItems), 'totalItems', opt_data.totalItems, 'null|number|undefined');
     /** @type {!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var viewTypes = soy.asserts.assertType(opt_data.viewTypes == null || goog.isArray(opt_data.viewTypes), 'viewTypes', opt_data.viewTypes, '!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    var isActive__soy32 = selectedItems && selectedItems > 0;
-    if (isActive__soy32) {
+    var isActive__soy35 = selectedItems && selectedItems > 0;
+    if (isActive__soy35) {
       $active(opt_data, null, opt_ijData);
     } else {
-      $default({ contentRenderer: ($$temp = contentRenderer) == null ? '' : $$temp, creationMenu: creationMenu, disabled: totalItems == 0, elementClasses: elementClasses, filterItems: filterItems, handleCloseMobileSearchClick_: handleCloseMobileSearchClick_, handleCreationButtonClicked_: handleCreationButtonClicked_, handleFilterDoneButtonClick_: handleFilterDoneButtonClick_, handleOpenMobileSearchClick_: handleOpenMobileSearchClick_, handleSearchSearchClick_: handleSearchSearchClick_, handleSelectPageCheckboxChanged_: handleSelectPageCheckboxChanged_, handleSortingButtonClicked_: handleSortingButtonClicked_, handleViewTypeClicked_: handleViewTypeClicked_, hideFiltersDoneButton: hideFiltersDoneButton, id: id, searchActionURL: searchActionURL, searchFormName: searchFormName, searchInputName: searchInputName, selectable: selectable, showSearch_: showSearch_, sortingOrder: sortingOrder, spritemap: spritemap, viewTypes: viewTypes }, null, opt_ijData);
+      $default({ _handleCloseMobileSearchClick: _handleCloseMobileSearchClick, _handleCreationButtonClicked: _handleCreationButtonClicked, _handleFilterDoneButtonClick: _handleFilterDoneButtonClick, _handleInfoButtonClicked: _handleInfoButtonClicked, _handleOpenMobileSearchClick: _handleOpenMobileSearchClick, _handleSearchSearchClick: _handleSearchSearchClick, _handleSelectPageCheckboxChanged: _handleSelectPageCheckboxChanged, _handleSortingButtonClicked: _handleSortingButtonClicked, _handleViewTypeClicked: _handleViewTypeClicked, _showSearchMobile: _showSearchMobile, contentRenderer: ($$temp = contentRenderer) == null ? '' : $$temp, creationMenu: creationMenu, disabled: totalItems == 0, elementClasses: elementClasses, filterItems: filterItems, hideFiltersDoneButton: hideFiltersDoneButton, id: id, searchActionURL: searchActionURL, searchFormName: searchFormName, searchInputName: searchInputName, selectable: selectable, showInfoButton: showInfoButton, showSearch: showSearch != false, sortingOrder: sortingOrder, spritemap: spritemap, viewTypes: viewTypes }, null, opt_ijData);
     }
   };
   exports.render = $render;
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleActionClicked: (*|null|undefined),
+   *  _handleCloseMobileSearchClick: (*|null|undefined),
+   *  _handleCreationButtonClicked: (*|null|undefined),
+   *  _handleDeselectAllClicked: (*|null|undefined),
+   *  _handleFilterDoneButtonClick: (*|null|undefined),
+   *  _handleInfoButtonClicked: (*|null|undefined),
+   *  _handleOpenMobileSearchClick: (*|null|undefined),
+   *  _handleSearchSearchClick: (*|null|undefined),
+   *  _handleSelectAllClicked: (*|null|undefined),
+   *  _handleSelectPageCheckboxChanged: (*|null|undefined),
+   *  _handleSortingButtonClicked: (*|null|undefined),
+   *  _handleViewTypeClicked: (*|null|undefined),
+   *  _showSearchMobile: (boolean|null|undefined),
    *  actionItems: (!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  creationMenu: (null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
+   *  creationMenu: (!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  filterItems: (!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
-   *  handleActionClicked_: (*|null|undefined),
-   *  handleCloseMobileSearchClick_: (*|null|undefined),
-   *  handleCreationButtonClicked_: (*|null|undefined),
-   *  handleDeselectAllClicked_: (*|null|undefined),
-   *  handleFilterDoneButtonClick_: (*|null|undefined),
-   *  handleOpenMobileSearchClick_: (*|null|undefined),
-   *  handleSearchSearchClick_: (*|null|undefined),
-   *  handleSelectAllClicked_: (*|null|undefined),
-   *  handleSelectPageCheckboxChanged_: (*|null|undefined),
-   *  handleSortingButtonClicked_: (*|null|undefined),
-   *  handleViewTypeClicked_: (*|null|undefined),
    *  hideFiltersDoneButton: (boolean|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchActionURL: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -58117,7 +58141,8 @@ goog.loadModule(function (exports) {
    *  searchInputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  selectable: (boolean|null|undefined),
    *  selectedItems: (null|number|undefined),
-   *  showSearch_: (boolean|null|undefined),
+   *  showInfoButton: (boolean|null|undefined),
+   *  showSearch: (boolean|null|undefined),
    *  sortingOrder: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  totalItems: (null|number|undefined),
    *  viewTypes: (!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
@@ -58139,32 +58164,36 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleActionClicked = opt_data._handleActionClicked;
+    /** @type {*|null|undefined} */
+    var _handleDeselectAllClicked = opt_data._handleDeselectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleInfoButtonClicked = opt_data._handleInfoButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleSelectAllClicked = opt_data._handleSelectAllClicked;
+    /** @type {*|null|undefined} */
+    var _handleSelectPageCheckboxChanged = opt_data._handleSelectPageCheckboxChanged;
     /** @type {!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var actionItems = soy.asserts.assertType(opt_data.actionItems == null || goog.isArray(opt_data.actionItems), 'actionItems', opt_data.actionItems, '!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleActionClicked_ = opt_data.handleActionClicked_;
-    /** @type {*|null|undefined} */
-    var handleDeselectAllClicked_ = opt_data.handleDeselectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleSelectAllClicked_ = opt_data.handleSelectAllClicked_;
-    /** @type {*|null|undefined} */
-    var handleSelectPageCheckboxChanged_ = opt_data.handleSelectPageCheckboxChanged_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {null|number|undefined} */
     var selectedItems = soy.asserts.assertType(opt_data.selectedItems == null || goog.isNumber(opt_data.selectedItems), 'selectedItems', opt_data.selectedItems, 'null|number|undefined');
+    /** @type {boolean|null|undefined} */
+    var showInfoButton = soy.asserts.assertType(opt_data.showInfoButton == null || goog.isBoolean(opt_data.showInfoButton) || opt_data.showInfoButton === 1 || opt_data.showInfoButton === 0, 'showInfoButton', opt_data.showInfoButton, 'boolean|null|undefined');
     /** @type {null|number|undefined} */
     var totalItems = soy.asserts.assertType(opt_data.totalItems == null || goog.isNumber(opt_data.totalItems), 'totalItems', opt_data.totalItems, 'null|number|undefined');
-    var navAttributes__soy101 = function navAttributes__soy101() {
+    var navAttributes__soy111 = function navAttributes__soy111() {
       incrementalDom.attr('class', 'management-bar management-bar-primary navbar navbar-expand-md' + (elementClasses ? ' ' + elementClasses : ''));
       if (id) {
         incrementalDom.attr('id', id);
       }
     };
     incrementalDom.elementOpenStart('nav');
-    navAttributes__soy101();
+    navAttributes__soy111();
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpenStart('div');
     incrementalDom.attr('class', 'container');
@@ -58175,7 +58204,7 @@ goog.loadModule(function (exports) {
     incrementalDom.elementOpenStart('li');
     incrementalDom.attr('class', 'nav-item');
     incrementalDom.elementOpenEnd();
-    $templateAlias1({ checked: true, events: { change: handleSelectPageCheckboxChanged_ }, hideLabel: true, indeterminate: selectedItems < totalItems, label: 'Select Page', ref: 'selectPageCheckbox' }, null, opt_ijData);
+    $templateAlias1({ checked: true, events: { change: _handleSelectPageCheckboxChanged }, hideLabel: true, indeterminate: selectedItems < totalItems, label: 'Select Page', ref: 'selectPageCheckbox' }, null, opt_ijData);
     incrementalDom.elementClose('li');
     incrementalDom.elementOpenStart('li');
     incrementalDom.attr('class', 'nav-item');
@@ -58198,34 +58227,43 @@ goog.loadModule(function (exports) {
     incrementalDom.attr('class', 'nav-item');
     incrementalDom.elementOpenEnd();
     if (selectedItems < totalItems) {
-      $templateAlias2({ elementClasses: 'nav-btn', events: { click: handleSelectAllClicked_ }, label: 'Select all', ref: 'selectAllButton', style: 'link' }, null, opt_ijData);
+      $templateAlias2({ elementClasses: 'nav-btn', events: { click: _handleSelectAllClicked }, label: 'Select all', ref: 'selectAllButton', style: 'link' }, null, opt_ijData);
     } else {
-      $templateAlias2({ elementClasses: 'nav-btn', events: { click: handleDeselectAllClicked_ }, label: 'Deselect all', ref: 'deselectAllButton', style: 'link' }, null, opt_ijData);
+      $templateAlias2({ elementClasses: 'nav-btn', events: { click: _handleDeselectAllClicked }, label: 'Deselect all', ref: 'deselectAllButton', style: 'link' }, null, opt_ijData);
     }
     incrementalDom.elementClose('li');
     incrementalDom.elementClose('ul');
-    if (actionItems) {
+    if (actionItems || showInfoButton) {
       incrementalDom.elementOpenStart('ul');
       incrementalDom.attr('class', 'navbar-nav');
       incrementalDom.elementOpenEnd();
-      var item140List = actionItems;
-      var item140ListLen = item140List.length;
-      for (var item140Index = 0; item140Index < item140ListLen; item140Index++) {
-        var item140Data = item140List[item140Index];
-        if (item140Data.quickAction && item140Data.icon && spritemap) {
-          incrementalDom.elementOpenStart('li');
-          incrementalDom.attr('class', 'nav-item navbar-breakpoint-down-d-none');
-          incrementalDom.attr('data-onclick', handleActionClicked_);
-          incrementalDom.elementOpenEnd();
-          $templateAlias2({ elementClasses: 'quick-action-item', icon: item140Data.icon, ref: 'quickAction' + item140Index, spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
-          incrementalDom.elementClose('li');
-        }
+      if (showInfoButton) {
+        incrementalDom.elementOpenStart('li');
+        incrementalDom.attr('class', 'nav-item');
+        incrementalDom.elementOpenEnd();
+        $templateAlias2({ elementClasses: 'nav-link nav-link-monospaced', events: { click: _handleInfoButtonClicked }, icon: 'info-circle-open', ref: 'infoButton', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+        incrementalDom.elementClose('li');
       }
-      incrementalDom.elementOpenStart('li');
-      incrementalDom.attr('class', 'nav-item');
-      incrementalDom.elementOpenEnd();
-      $templateAlias3({ events: { itemClicked: handleActionClicked_ }, items: actionItems, spritemap: spritemap }, null, opt_ijData);
-      incrementalDom.elementClose('li');
+      if (actionItems) {
+        var item165List = actionItems;
+        var item165ListLen = item165List.length;
+        for (var item165Index = 0; item165Index < item165ListLen; item165Index++) {
+          var item165Data = item165List[item165Index];
+          if (item165Data.quickAction && item165Data.icon && spritemap) {
+            incrementalDom.elementOpenStart('li');
+            incrementalDom.attr('class', 'nav-item navbar-breakpoint-down-d-none');
+            incrementalDom.attr('data-onclick', _handleActionClicked);
+            incrementalDom.elementOpenEnd();
+            $templateAlias2({ elementClasses: 'quick-action-item', icon: item165Data.icon, ref: 'quickAction' + item165Index, spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+            incrementalDom.elementClose('li');
+          }
+        }
+        incrementalDom.elementOpenStart('li');
+        incrementalDom.attr('class', 'nav-item');
+        incrementalDom.elementOpenEnd();
+        $templateAlias3({ events: { itemClicked: _handleActionClicked }, items: actionItems, spritemap: spritemap }, null, opt_ijData);
+        incrementalDom.elementClose('li');
+      }
       incrementalDom.elementClose('ul');
     }
     incrementalDom.elementClose('div');
@@ -58235,14 +58273,16 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleActionClicked: (*|null|undefined),
+   *  _handleDeselectAllClicked: (*|null|undefined),
+   *  _handleInfoButtonClicked: (*|null|undefined),
+   *  _handleSelectAllClicked: (*|null|undefined),
+   *  _handleSelectPageCheckboxChanged: (*|null|undefined),
    *  actionItems: (!Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleActionClicked_: (*|null|undefined),
-   *  handleDeselectAllClicked_: (*|null|undefined),
-   *  handleSelectAllClicked_: (*|null|undefined),
-   *  handleSelectPageCheckboxChanged_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  selectedItems: (null|number|undefined),
+   *  showInfoButton: (boolean|null|undefined),
    *  totalItems: (null|number|undefined),
    * }}
    */
@@ -58262,32 +58302,36 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleCloseMobileSearchClick = opt_data._handleCloseMobileSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleCreationButtonClicked = opt_data._handleCreationButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleFilterDoneButtonClick = opt_data._handleFilterDoneButtonClick;
+    /** @type {*|null|undefined} */
+    var _handleInfoButtonClicked = opt_data._handleInfoButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleOpenMobileSearchClick = opt_data._handleOpenMobileSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleSearchSearchClick = opt_data._handleSearchSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleSelectPageCheckboxChanged = opt_data._handleSelectPageCheckboxChanged;
+    /** @type {*|null|undefined} */
+    var _handleSortingButtonClicked = opt_data._handleSortingButtonClicked;
+    /** @type {*|null|undefined} */
+    var _handleViewTypeClicked = opt_data._handleViewTypeClicked;
+    /** @type {boolean|null|undefined} */
+    var _showSearchMobile = soy.asserts.assertType(opt_data._showSearchMobile == null || goog.isBoolean(opt_data._showSearchMobile) || opt_data._showSearchMobile === 1 || opt_data._showSearchMobile === 0, '_showSearchMobile', opt_data._showSearchMobile, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var contentRenderer = soy.asserts.assertType(opt_data.contentRenderer == null || goog.isString(opt_data.contentRenderer) || opt_data.contentRenderer instanceof goog.soy.data.SanitizedContent, 'contentRenderer', opt_data.contentRenderer, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
-    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu), 'creationMenu', opt_data.creationMenu, 'null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
+    /** @type {!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}} */
+    var creationMenu = soy.asserts.assertType(opt_data.creationMenu == null || goog.isObject(opt_data.creationMenu) || goog.isBoolean(opt_data.creationMenu) || opt_data.creationMenu === 1 || opt_data.creationMenu === 0 || goog.isString(opt_data.creationMenu) || opt_data.creationMenu instanceof goog.soy.data.SanitizedContent, 'creationMenu', opt_data.creationMenu, '!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}');
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var filterItems = soy.asserts.assertType(opt_data.filterItems == null || goog.isArray(opt_data.filterItems), 'filterItems', opt_data.filterItems, '!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseMobileSearchClick_ = opt_data.handleCloseMobileSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleCreationButtonClicked_ = opt_data.handleCreationButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleFilterDoneButtonClick_ = opt_data.handleFilterDoneButtonClick_;
-    /** @type {*|null|undefined} */
-    var handleOpenMobileSearchClick_ = opt_data.handleOpenMobileSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleSearchSearchClick_ = opt_data.handleSearchSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleSelectPageCheckboxChanged_ = opt_data.handleSelectPageCheckboxChanged_;
-    /** @type {*|null|undefined} */
-    var handleSortingButtonClicked_ = opt_data.handleSortingButtonClicked_;
-    /** @type {*|null|undefined} */
-    var handleViewTypeClicked_ = opt_data.handleViewTypeClicked_;
     /** @type {boolean|null|undefined} */
     var hideFiltersDoneButton = soy.asserts.assertType(opt_data.hideFiltersDoneButton == null || goog.isBoolean(opt_data.hideFiltersDoneButton) || opt_data.hideFiltersDoneButton === 1 || opt_data.hideFiltersDoneButton === 0, 'hideFiltersDoneButton', opt_data.hideFiltersDoneButton, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -58301,22 +58345,27 @@ goog.loadModule(function (exports) {
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
-    var showSearch_ = soy.asserts.assertType(opt_data.showSearch_ == null || goog.isBoolean(opt_data.showSearch_) || opt_data.showSearch_ === 1 || opt_data.showSearch_ === 0, 'showSearch_', opt_data.showSearch_, 'boolean|null|undefined');
+    var showInfoButton = soy.asserts.assertType(opt_data.showInfoButton == null || goog.isBoolean(opt_data.showInfoButton) || opt_data.showInfoButton === 1 || opt_data.showInfoButton === 0, 'showInfoButton', opt_data.showInfoButton, 'boolean|null|undefined');
+    /** @type {boolean|null|undefined} */
+    var showSearch = soy.asserts.assertType(opt_data.showSearch == null || goog.isBoolean(opt_data.showSearch) || opt_data.showSearch === 1 || opt_data.showSearch === 0, 'showSearch', opt_data.showSearch, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var sortingOrder = soy.asserts.assertType(opt_data.sortingOrder == null || goog.isString(opt_data.sortingOrder) || opt_data.sortingOrder instanceof goog.soy.data.SanitizedContent, 'sortingOrder', opt_data.sortingOrder, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined} */
     var viewTypes = soy.asserts.assertType(opt_data.viewTypes == null || goog.isArray(opt_data.viewTypes), 'viewTypes', opt_data.viewTypes, '!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined');
-    var navAttributes__soy201 = function navAttributes__soy201() {
+    var navAttributes__soy230 = function navAttributes__soy230() {
       incrementalDom.attr('class', 'management-bar management-bar-light navbar navbar-expand-md' + (elementClasses ? ' ' + elementClasses : ''));
       if (id) {
         incrementalDom.attr('id', id);
       }
     };
     incrementalDom.elementOpenStart('nav');
-    navAttributes__soy201();
+    navAttributes__soy230();
     incrementalDom.elementOpenEnd();
+    var onlySearch__soy234 = showSearch && !creationMenu && !selectable && !filterItems && !sortingOrder && !viewTypes;
+    var containerClasses__soy243 = '';
+    containerClasses__soy243 += onlySearch__soy234 ? 'container-fluid container-fluid-max-xl' : 'container';
     incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('class', 'container');
+    incrementalDom.attr('class', containerClasses__soy243);
     incrementalDom.elementOpenEnd();
     incrementalDom.elementOpenStart('ul');
     incrementalDom.attr('class', 'navbar-nav');
@@ -58325,64 +58374,88 @@ goog.loadModule(function (exports) {
       incrementalDom.elementOpenStart('li');
       incrementalDom.attr('class', 'nav-item');
       incrementalDom.elementOpenEnd();
-      $templateAlias1({ disabled: disabled, events: { change: handleSelectPageCheckboxChanged_ }, hideLabel: true, label: 'Select Page', ref: 'selectPageCheckbox' }, null, opt_ijData);
+      $templateAlias1({ disabled: disabled, events: { change: _handleSelectPageCheckboxChanged }, hideLabel: true, label: 'Select Page', ref: 'selectPageCheckbox' }, null, opt_ijData);
       incrementalDom.elementClose('li');
     }
     if (filterItems) {
+      var filtersTrigger__soy270 = function filtersTrigger__soy270() {
+        incrementalDom.elementOpenStart('span');
+        incrementalDom.attr('class', 'navbar-breakpoint-down-d-none');
+        incrementalDom.elementOpenEnd();
+        incrementalDom.text('Filter and Order');
+        $templateAlias4({ spritemap: spritemap, symbol: 'caret-bottom' }, null, opt_ijData);
+        incrementalDom.elementClose('span');
+        incrementalDom.elementOpenStart('span');
+        incrementalDom.attr('class', 'navbar-breakpoint-d-none');
+        incrementalDom.elementOpenEnd();
+        $templateAlias4({ spritemap: spritemap, symbol: 'filter' }, null, opt_ijData);
+        incrementalDom.elementClose('span');
+      };
       incrementalDom.elementOpenStart('li');
       incrementalDom.attr('class', 'dropdown nav-item');
       incrementalDom.elementOpenEnd();
-      $templateAlias4({ button: hideFiltersDoneButton ? null : { label: 'Done' }, disabled: disabled, events: { buttonClicked: handleFilterDoneButtonClick_ }, items: filterItems, label: 'Filter and Order', ref: 'filters', spritemap: spritemap, triggerClasses: 'nav-link navbar-breakpoint-down-d-none' }, null, opt_ijData);
+      $templateAlias5({ button: hideFiltersDoneButton ? null : { label: 'Done' }, disabled: disabled, events: { buttonClicked: _handleFilterDoneButtonClick }, items: filterItems, label: filtersTrigger__soy270, ref: 'filters', spritemap: spritemap, triggerClasses: 'nav-link' }, null, opt_ijData);
       incrementalDom.elementClose('li');
     }
-    incrementalDom.elementOpenStart('li');
-    incrementalDom.attr('class', 'nav-item');
-    incrementalDom.elementOpenEnd();
-    var orderClasses__soy237 = '';
-    orderClasses__soy237 += 'nav-link nav-link-monospaced';
-    orderClasses__soy237 += sortingOrder == 'desc' ? ' order-arrow-down-active' : ' order-arrow-up-active';
-    $templateAlias2({ disabled: disabled, elementClasses: orderClasses__soy237, events: { click: handleSortingButtonClicked_ }, icon: 'order-arrow', ref: 'sortingButton', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
-    incrementalDom.elementClose('li');
+    if (sortingOrder) {
+      incrementalDom.elementOpenStart('li');
+      incrementalDom.attr('class', 'nav-item');
+      incrementalDom.elementOpenEnd();
+      var sortingClasses__soy293 = '';
+      sortingClasses__soy293 += 'nav-link nav-link-monospaced';
+      sortingClasses__soy293 += sortingOrder == 'desc' ? ' order-arrow-down-active' : ' order-arrow-up-active';
+      $templateAlias2({ disabled: disabled, elementClasses: sortingClasses__soy293, events: { click: _handleSortingButtonClicked }, icon: 'order-arrow', ref: 'sortingButton', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+      incrementalDom.elementClose('li');
+    }
     incrementalDom.elementClose('ul');
-    var searchClasses__soy253 = '';
-    searchClasses__soy253 += 'navbar-form navbar-form-autofit navbar-overlay navbar-overlay-sm-down';
-    searchClasses__soy253 += showSearch_ ? ' show' : '';
-    incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('class', searchClasses__soy253);
-    incrementalDom.elementOpenEnd();
-    incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('class', 'container');
-    incrementalDom.elementOpenEnd();
-    soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayManagementToolbar.SearchForm.idom'), contentRenderer, false)(opt_data, null, opt_ijData);
-    incrementalDom.elementClose('div');
-    incrementalDom.elementClose('div');
+    if (showSearch) {
+      var searchClasses__soy317 = '';
+      searchClasses__soy317 += 'navbar-form navbar-form-autofit';
+      searchClasses__soy317 += !onlySearch__soy234 ? ' navbar-overlay navbar-overlay-sm-down' + (_showSearchMobile ? ' show' : '') : '';
+      incrementalDom.elementOpenStart('div');
+      incrementalDom.attr('class', searchClasses__soy317);
+      incrementalDom.elementOpenEnd();
+      soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayManagementToolbar.SearchForm.idom'), contentRenderer, false)({ _handleCloseMobileSearchClick: _handleCloseMobileSearchClick, _handleSearchSearchClick: _handleSearchSearchClick, disabled: disabled, onlySearch: onlySearch__soy234, searchActionURL: searchActionURL, searchFormName: searchFormName, searchInputName: searchInputName, spritemap: spritemap }, null, opt_ijData);
+      incrementalDom.elementClose('div');
+    }
     incrementalDom.elementOpenStart('ul');
     incrementalDom.attr('class', 'navbar-nav');
     incrementalDom.elementOpenEnd();
-    incrementalDom.elementOpenStart('li');
-    incrementalDom.attr('class', 'nav-item navbar-breakpoint-d-none');
-    incrementalDom.elementOpenEnd();
-    $templateAlias2({ disabled: disabled, elementClasses: 'nav-link nav-link-monospaced', events: { click: handleOpenMobileSearchClick_ }, icon: 'search', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
-    incrementalDom.elementClose('li');
+    if (showSearch && !onlySearch__soy234) {
+      incrementalDom.elementOpenStart('li');
+      incrementalDom.attr('class', 'nav-item navbar-breakpoint-d-none');
+      incrementalDom.elementOpenEnd();
+      $templateAlias2({ disabled: disabled, elementClasses: 'nav-link nav-link-monospaced', events: { click: _handleOpenMobileSearchClick }, icon: 'search', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+      incrementalDom.elementClose('li');
+    }
+    if (showInfoButton) {
+      incrementalDom.elementOpenStart('li');
+      incrementalDom.attr('class', 'nav-item');
+      incrementalDom.elementOpenEnd();
+      $templateAlias2({ elementClasses: 'nav-link nav-link-monospaced', events: { click: _handleInfoButtonClicked }, icon: 'info-circle-open', ref: 'infoButton', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+      incrementalDom.elementClose('li');
+    }
     if (viewTypes) {
       incrementalDom.elementOpenStart('li');
       incrementalDom.attr('class', 'dropdown nav-item');
       incrementalDom.elementOpenEnd();
-      var param289 = '';
-      var viewType279List = viewTypes;
-      var viewType279ListLen = viewType279List.length;
-      for (var viewType279Index = 0; viewType279Index < viewType279ListLen; viewType279Index++) {
-        var viewType279Data = viewType279List[viewType279Index];
-        param289 += viewType279Data.active ? viewType279Data.icon : '';
+      var param371 = '';
+      var viewType361List = viewTypes;
+      var viewType361ListLen = viewType361List.length;
+      for (var viewType361Index = 0; viewType361Index < viewType361ListLen; viewType361Index++) {
+        var viewType361Data = viewType361List[viewType361Index];
+        param371 += viewType361Data.active ? viewType361Data.icon : '';
       }
-      $templateAlias4({ events: { itemClicked: handleViewTypeClicked_ }, icon: param289, items: viewTypes, itemsIconAlignment: 'left', ref: 'viewTypesDropdown', spritemap: spritemap, triggerClasses: 'nav-link nav-link-monospaced' }, null, opt_ijData);
+      $templateAlias6({ events: { itemClicked: _handleViewTypeClicked }, icon: param371, items: viewTypes, itemsIconAlignment: 'left', ref: 'viewTypesDropdown', spritemap: spritemap, triggerClasses: 'nav-link nav-link-monospaced' }, null, opt_ijData);
       incrementalDom.elementClose('li');
     }
-    incrementalDom.elementOpenStart('li');
-    incrementalDom.attr('class', 'nav-item');
-    incrementalDom.elementOpenEnd();
-    $creationMenu({ button: creationMenu ? creationMenu.button : null, caption: creationMenu ? creationMenu.caption : null, handleCreationButtonClicked_: handleCreationButtonClicked_, helpText: creationMenu ? creationMenu.helpText : null, items: creationMenu ? creationMenu.items : null, spritemap: spritemap }, null, opt_ijData);
-    incrementalDom.elementClose('li');
+    if (creationMenu) {
+      incrementalDom.elementOpenStart('li');
+      incrementalDom.attr('class', 'nav-item');
+      incrementalDom.elementOpenEnd();
+      $creationMenu(opt_data, null, opt_ijData);
+      incrementalDom.elementClose('li');
+    }
     incrementalDom.elementClose('ul');
     incrementalDom.elementClose('div');
     incrementalDom.elementClose('nav');
@@ -58391,26 +58464,29 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleCloseMobileSearchClick: (*|null|undefined),
+   *  _handleCreationButtonClicked: (*|null|undefined),
+   *  _handleFilterDoneButtonClick: (*|null|undefined),
+   *  _handleInfoButtonClicked: (*|null|undefined),
+   *  _handleOpenMobileSearchClick: (*|null|undefined),
+   *  _handleSearchSearchClick: (*|null|undefined),
+   *  _handleSelectPageCheckboxChanged: (*|null|undefined),
+   *  _handleSortingButtonClicked: (*|null|undefined),
+   *  _handleViewTypeClicked: (*|null|undefined),
+   *  _showSearchMobile: (boolean|null|undefined),
    *  contentRenderer: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  creationMenu: (null|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
+   *  creationMenu: (!goog.soy.data.SanitizedContent|boolean|null|string|undefined|{button: ?, caption: (!goog.soy.data.SanitizedContent|string), helpText: (!goog.soy.data.SanitizedContent|string), items: !Array<{disabled: boolean, href: (!goog.soy.data.SanitizedContent|string), icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), quickAction: boolean, separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>,}),
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  filterItems: (!Array<{checked: boolean, disabled: boolean, inputName: (!goog.soy.data.SanitizedContent|string), inputValue: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string), separator: boolean, type: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
-   *  handleCloseMobileSearchClick_: (*|null|undefined),
-   *  handleCreationButtonClicked_: (*|null|undefined),
-   *  handleFilterDoneButtonClick_: (*|null|undefined),
-   *  handleOpenMobileSearchClick_: (*|null|undefined),
-   *  handleSearchSearchClick_: (*|null|undefined),
-   *  handleSelectPageCheckboxChanged_: (*|null|undefined),
-   *  handleSortingButtonClicked_: (*|null|undefined),
-   *  handleViewTypeClicked_: (*|null|undefined),
    *  hideFiltersDoneButton: (boolean|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchActionURL: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchFormName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchInputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  selectable: (boolean|null|undefined),
-   *  showSearch_: (boolean|null|undefined),
+   *  showInfoButton: (boolean|null|undefined),
+   *  showSearch: (boolean|null|undefined),
    *  sortingOrder: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  viewTypes: (!Array<{active: boolean, disabled: boolean, icon: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>|null|undefined),
    * }}
@@ -58429,38 +58505,29 @@ goog.loadModule(function (exports) {
    */
   var $creationMenu = function $creationMenu(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
+    /** @type {?} */
+    var creationMenu = opt_data.creationMenu;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
-    /** @type {?} */
-    var button = opt_data.button;
-    /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
-    var caption = soy.asserts.assertType(opt_data.caption == null || goog.isString(opt_data.caption) || opt_data.caption instanceof goog.soy.data.SanitizedContent, 'caption', opt_data.caption, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {*|null|undefined} */
-    var handleCreationButtonClicked_ = opt_data.handleCreationButtonClicked_;
-    /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
-    var helpText = soy.asserts.assertType(opt_data.helpText == null || goog.isString(opt_data.helpText) || opt_data.helpText instanceof goog.soy.data.SanitizedContent, 'helpText', opt_data.helpText, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {!Array<?>|null|undefined} */
-    var items = soy.asserts.assertType(opt_data.items == null || goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>|null|undefined');
-    if (items && items.length > 1) {
-      var param326 = function param326() {
-        $templateAlias6({ spritemap: spritemap, symbol: 'plus' }, null, opt_ijData);
+    var _handleCreationButtonClicked = opt_data._handleCreationButtonClicked;
+    if (creationMenu.items) {
+      var param406 = function param406() {
+        $templateAlias4({ spritemap: spritemap, symbol: 'plus' }, null, opt_ijData);
       };
-      $templateAlias5({ button: button, caption: caption, helpText: helpText, items: items, label: param326, ref: 'creationMenuDropdown', spritemap: spritemap, style: 'primary', triggerClasses: 'nav-btn nav-btn-monospaced navbar-breakpoint-down-d-none' }, null, opt_ijData);
-    } else if (items) {
-      $templateAlias7({ buttonStyle: 'primary', elementClasses: 'nav-btn nav-btn-monospaced navbar-breakpoint-down-d-none', href: items[0].href, icon: 'plus', spritemap: spritemap }, null, opt_ijData);
+      $templateAlias5({ button: creationMenu.button, caption: creationMenu.caption, helpText: creationMenu.helpText, items: creationMenu.items, label: param406, ref: 'creationMenuDropdown', spritemap: spritemap, style: 'primary', triggerClasses: 'nav-btn nav-btn-monospaced navbar-breakpoint-down-d-none' }, null, opt_ijData);
+    } else if (creationMenu == true) {
+      $templateAlias2({ elementClasses: 'nav-btn nav-btn-monospaced', events: { click: _handleCreationButtonClicked }, icon: 'plus', ref: 'creationMenu', spritemap: spritemap }, null, opt_ijData);
     } else {
-      $templateAlias2({ elementClasses: 'nav-btn nav-btn-monospaced', events: { click: handleCreationButtonClicked_ }, icon: 'plus', ref: 'creationMenu', spritemap: spritemap }, null, opt_ijData);
+      $templateAlias7({ ariaLabel: 'add', buttonStyle: 'primary', elementClasses: 'nav-btn nav-btn-monospaced navbar-breakpoint-down-d-none', href: creationMenu, icon: 'plus', spritemap: spritemap }, null, opt_ijData);
     }
   };
   exports.creationMenu = $creationMenu;
   /**
    * @typedef {{
+   *  creationMenu: ?,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
-   *  button: (?|undefined),
-   *  caption: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCreationButtonClicked_: (*|null|undefined),
-   *  helpText: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  items: (!Array<?>|null|undefined),
+   *  _handleCreationButtonClicked: (*|null|undefined),
    * }}
    */
   $creationMenu.Params;
@@ -58479,68 +58546,84 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleCloseMobileSearchClick = opt_data._handleCloseMobileSearchClick;
+    /** @type {*|null|undefined} */
+    var _handleSearchSearchClick = opt_data._handleSearchSearchClick;
     /** @type {boolean|null|undefined} */
     var disabled = soy.asserts.assertType(opt_data.disabled == null || goog.isBoolean(opt_data.disabled) || opt_data.disabled === 1 || opt_data.disabled === 0, 'disabled', opt_data.disabled, 'boolean|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleCloseMobileSearchClick_ = opt_data.handleCloseMobileSearchClick_;
-    /** @type {*|null|undefined} */
-    var handleSearchSearchClick_ = opt_data.handleSearchSearchClick_;
+    /** @type {boolean|null|undefined} */
+    var onlySearch = soy.asserts.assertType(opt_data.onlySearch == null || goog.isBoolean(opt_data.onlySearch) || opt_data.onlySearch === 1 || opt_data.onlySearch === 0, 'onlySearch', opt_data.onlySearch, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var searchActionURL = soy.asserts.assertType(opt_data.searchActionURL == null || goog.isString(opt_data.searchActionURL) || opt_data.searchActionURL instanceof goog.soy.data.SanitizedContent, 'searchActionURL', opt_data.searchActionURL, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var searchFormName = soy.asserts.assertType(opt_data.searchFormName == null || goog.isString(opt_data.searchFormName) || opt_data.searchFormName instanceof goog.soy.data.SanitizedContent, 'searchFormName', opt_data.searchFormName, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var searchInputName = soy.asserts.assertType(opt_data.searchInputName == null || goog.isString(opt_data.searchInputName) || opt_data.searchInputName instanceof goog.soy.data.SanitizedContent, 'searchInputName', opt_data.searchInputName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    var searchFormAttributes__soy374 = function searchFormAttributes__soy374() {
-      if (searchActionURL) {
-        incrementalDom.attr('action', searchActionURL);
+    var searchFormContent__soy493 = function searchFormContent__soy493() {
+      var searchFormAttributes__soy457 = function searchFormAttributes__soy457() {
+        if (searchActionURL) {
+          incrementalDom.attr('action', searchActionURL);
+        }
+        if (searchFormName) {
+          incrementalDom.attr('name', searchFormName);
+        }
+        incrementalDom.attr('role', 'search');
+      };
+      incrementalDom.elementOpenStart('form');
+      searchFormAttributes__soy457();
+      incrementalDom.elementOpenEnd();
+      incrementalDom.elementOpenStart('div');
+      incrementalDom.attr('class', 'input-group');
+      incrementalDom.elementOpenEnd();
+      incrementalDom.elementOpenStart('div');
+      incrementalDom.attr('class', 'input-group-item');
+      incrementalDom.elementOpenEnd();
+      var inputAttributes__soy468 = function inputAttributes__soy468() {
+        incrementalDom.attr('aria-label', 'Search');
+        if (disabled) {
+          incrementalDom.attr('disabled', '');
+        }
+        incrementalDom.attr('class', 'form-control input-group-inset input-group-inset-after');
+        incrementalDom.attr('name', searchInputName);
+        incrementalDom.attr('placeholder', 'Search for...');
+        incrementalDom.attr('ref', 'search');
+        incrementalDom.attr('type', 'text');
+      };
+      incrementalDom.elementOpenStart('input');
+      inputAttributes__soy468();
+      incrementalDom.elementOpenEnd();
+      incrementalDom.elementClose('input');
+      incrementalDom.elementOpenStart('span');
+      incrementalDom.attr('class', 'input-group-inset-item input-group-inset-item-after');
+      incrementalDom.elementOpenEnd();
+      if (!onlySearch) {
+        $templateAlias2({ elementClasses: 'navbar-breakpoint-d-none', events: { click: _handleCloseMobileSearchClick }, icon: 'times', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
       }
-      if (searchFormName) {
-        incrementalDom.attr('name', searchFormName);
-      }
-      incrementalDom.attr('role', 'search');
+      $templateAlias2({ disabled: disabled, elementClasses: onlySearch ? '' : 'navbar-breakpoint-d-block', events: { click: _handleSearchSearchClick }, icon: 'search', ref: 'searchButton', spritemap: spritemap, style: 'unstyled', type: 'submit' }, null, opt_ijData);
+      incrementalDom.elementClose('span');
+      incrementalDom.elementClose('div');
+      incrementalDom.elementClose('div');
+      incrementalDom.elementClose('form');
     };
-    incrementalDom.elementOpenStart('form');
-    searchFormAttributes__soy374();
-    incrementalDom.elementOpenEnd();
-    incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('class', 'input-group');
-    incrementalDom.elementOpenEnd();
-    incrementalDom.elementOpenStart('div');
-    incrementalDom.attr('class', 'input-group-item');
-    incrementalDom.elementOpenEnd();
-    var inputAttributes__soy385 = function inputAttributes__soy385() {
-      incrementalDom.attr('aria-label', 'Search');
-      if (disabled) {
-        incrementalDom.attr('disabled', '');
-      }
-      incrementalDom.attr('class', 'form-control input-group-inset input-group-inset-after');
-      incrementalDom.attr('name', searchInputName);
-      incrementalDom.attr('placeholder', 'Search for...');
-      incrementalDom.attr('ref', 'search');
-      incrementalDom.attr('type', 'text');
-    };
-    incrementalDom.elementOpenStart('input');
-    inputAttributes__soy385();
-    incrementalDom.elementOpenEnd();
-    incrementalDom.elementClose('input');
-    incrementalDom.elementOpenStart('span');
-    incrementalDom.attr('class', 'input-group-inset-item input-group-inset-item-after');
-    incrementalDom.elementOpenEnd();
-    $templateAlias2({ elementClasses: 'navbar-breakpoint-d-none', events: { click: handleCloseMobileSearchClick_ }, icon: 'times', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
-    $templateAlias2({ disabled: disabled, elementClasses: 'navbar-breakpoint-d-block', events: { click: handleSearchSearchClick_ }, icon: 'search', ref: 'searchButton', spritemap: spritemap, style: 'unstyled', type: 'submit' }, null, opt_ijData);
-    incrementalDom.elementClose('span');
-    incrementalDom.elementClose('div');
-    incrementalDom.elementClose('div');
-    incrementalDom.elementClose('form');
+    if (onlySearch) {
+      searchFormContent__soy493();
+    } else {
+      incrementalDom.elementOpenStart('div');
+      incrementalDom.attr('class', 'container-fluid container-fluid-max-xl');
+      incrementalDom.elementOpenEnd();
+      searchFormContent__soy493();
+      incrementalDom.elementClose('div');
+    }
   };
   exports.__deltemplate__ClayManagementToolbar_SearchForm_ = __deltemplate__ClayManagementToolbar_SearchForm_;
   /**
    * @typedef {{
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleCloseMobileSearchClick: (*|null|undefined),
+   *  _handleSearchSearchClick: (*|null|undefined),
    *  disabled: (boolean|null|undefined),
-   *  handleCloseMobileSearchClick_: (*|null|undefined),
-   *  handleSearchSearchClick_: (*|null|undefined),
+   *  onlySearch: (boolean|null|undefined),
    *  searchActionURL: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchFormName: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  searchInputName: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -58552,14 +58635,14 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayManagementToolbar.SearchForm.idom'), '', 0, __deltemplate__ClayManagementToolbar_SearchForm_);
 
-  exports.render.params = ["spritemap", "actionItems", "contentRenderer", "creationMenu", "elementClasses", "filterItems", "handleActionClicked_", "handleCloseMobileSearchClick_", "handleCreationButtonClicked_", "handleDeselectAllClicked_", "handleFilterDoneButtonClick_", "handleOpenMobileSearchClick_", "handleSearchSearchClick_", "handleSelectAllClicked_", "handleSelectPageCheckboxChanged_", "handleSortingButtonClicked_", "handleViewTypeClicked_", "hideFiltersDoneButton", "id", "searchActionURL", "searchFormName", "searchInputName", "selectable", "selectedItems", "showSearch_", "sortingOrder", "totalItems", "viewTypes"];
-  exports.render.types = { "spritemap": "string", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "contentRenderer": "string", "creationMenu": "[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "handleActionClicked_": "any", "handleCloseMobileSearchClick_": "any", "handleCreationButtonClicked_": "any", "handleDeselectAllClicked_": "any", "handleFilterDoneButtonClick_": "any", "handleOpenMobileSearchClick_": "any", "handleSearchSearchClick_": "any", "handleSelectAllClicked_": "any", "handleSelectPageCheckboxChanged_": "any", "handleSortingButtonClicked_": "any", "handleViewTypeClicked_": "any", "hideFiltersDoneButton": "bool", "id": "string", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "selectedItems": "number", "showSearch_": "bool", "sortingOrder": "string", "totalItems": "number", "viewTypes": "list<[\n\t\tactive: bool,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string\n\t]>" };
-  exports.active.params = ["spritemap", "actionItems", "elementClasses", "handleActionClicked_", "handleDeselectAllClicked_", "handleSelectAllClicked_", "handleSelectPageCheckboxChanged_", "id", "selectedItems", "totalItems"];
-  exports.active.types = { "spritemap": "string", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "elementClasses": "string", "handleActionClicked_": "any", "handleDeselectAllClicked_": "any", "handleSelectAllClicked_": "any", "handleSelectPageCheckboxChanged_": "any", "id": "string", "selectedItems": "number", "totalItems": "number" };
-  exports.default.params = ["spritemap", "contentRenderer", "creationMenu", "disabled", "elementClasses", "filterItems", "handleCloseMobileSearchClick_", "handleCreationButtonClicked_", "handleFilterDoneButtonClick_", "handleOpenMobileSearchClick_", "handleSearchSearchClick_", "handleSelectPageCheckboxChanged_", "handleSortingButtonClicked_", "handleViewTypeClicked_", "hideFiltersDoneButton", "id", "searchActionURL", "searchFormName", "searchInputName", "selectable", "showSearch_", "sortingOrder", "viewTypes"];
-  exports.default.types = { "spritemap": "string", "contentRenderer": "string", "creationMenu": "[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "disabled": "bool", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "handleCloseMobileSearchClick_": "any", "handleCreationButtonClicked_": "any", "handleFilterDoneButtonClick_": "any", "handleOpenMobileSearchClick_": "any", "handleSearchSearchClick_": "any", "handleSelectPageCheckboxChanged_": "any", "handleSortingButtonClicked_": "any", "handleViewTypeClicked_": "any", "hideFiltersDoneButton": "bool", "id": "string", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "showSearch_": "bool", "sortingOrder": "string", "viewTypes": "list<[\n\t\tactive: bool,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string\n\t]>" };
-  exports.creationMenu.params = ["spritemap", "button", "caption", "handleCreationButtonClicked_", "helpText", "items"];
-  exports.creationMenu.types = { "spritemap": "string", "button": "?", "caption": "string", "handleCreationButtonClicked_": "any", "helpText": "string", "items": "list<?>" };
+  exports.render.params = ["spritemap", "_handleActionClicked", "_handleCloseMobileSearchClick", "_handleCreationButtonClicked", "_handleDeselectAllClicked", "_handleFilterDoneButtonClick", "_handleInfoButtonClicked", "_handleOpenMobileSearchClick", "_handleSearchSearchClick", "_handleSelectAllClicked", "_handleSelectPageCheckboxChanged", "_handleSortingButtonClicked", "_handleViewTypeClicked", "_showSearchMobile", "actionItems", "contentRenderer", "creationMenu", "elementClasses", "filterItems", "hideFiltersDoneButton", "id", "searchActionURL", "searchFormName", "searchInputName", "selectable", "selectedItems", "showInfoButton", "showSearch", "sortingOrder", "totalItems", "viewTypes"];
+  exports.render.types = { "spritemap": "string", "_handleActionClicked": "any", "_handleCloseMobileSearchClick": "any", "_handleCreationButtonClicked": "any", "_handleDeselectAllClicked": "any", "_handleFilterDoneButtonClick": "any", "_handleInfoButtonClicked": "any", "_handleOpenMobileSearchClick": "any", "_handleSearchSearchClick": "any", "_handleSelectAllClicked": "any", "_handleSelectPageCheckboxChanged": "any", "_handleSortingButtonClicked": "any", "_handleViewTypeClicked": "any", "_showSearchMobile": "bool", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "contentRenderer": "string", "creationMenu": "bool|string|[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "hideFiltersDoneButton": "bool", "id": "string", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "selectedItems": "number", "showInfoButton": "bool", "showSearch": "bool", "sortingOrder": "string", "totalItems": "number", "viewTypes": "list<[\n\t\tactive: bool,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string\n\t]>" };
+  exports.active.params = ["spritemap", "_handleActionClicked", "_handleDeselectAllClicked", "_handleInfoButtonClicked", "_handleSelectAllClicked", "_handleSelectPageCheckboxChanged", "actionItems", "elementClasses", "id", "selectedItems", "showInfoButton", "totalItems"];
+  exports.active.types = { "spritemap": "string", "_handleActionClicked": "any", "_handleDeselectAllClicked": "any", "_handleInfoButtonClicked": "any", "_handleSelectAllClicked": "any", "_handleSelectPageCheckboxChanged": "any", "actionItems": "list<[\n\t\tdisabled: bool,\n\t\thref: string,\n\t\ticon: string,\n\t\tlabel: string,\n\t\tquickAction: bool,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "elementClasses": "string", "id": "string", "selectedItems": "number", "showInfoButton": "bool", "totalItems": "number" };
+  exports.default.params = ["spritemap", "_handleCloseMobileSearchClick", "_handleCreationButtonClicked", "_handleFilterDoneButtonClick", "_handleInfoButtonClicked", "_handleOpenMobileSearchClick", "_handleSearchSearchClick", "_handleSelectPageCheckboxChanged", "_handleSortingButtonClicked", "_handleViewTypeClicked", "_showSearchMobile", "contentRenderer", "creationMenu", "disabled", "elementClasses", "filterItems", "hideFiltersDoneButton", "id", "searchActionURL", "searchFormName", "searchInputName", "selectable", "showInfoButton", "showSearch", "sortingOrder", "viewTypes"];
+  exports.default.types = { "spritemap": "string", "_handleCloseMobileSearchClick": "any", "_handleCreationButtonClicked": "any", "_handleFilterDoneButtonClick": "any", "_handleInfoButtonClicked": "any", "_handleOpenMobileSearchClick": "any", "_handleSearchSearchClick": "any", "_handleSelectPageCheckboxChanged": "any", "_handleSortingButtonClicked": "any", "_handleViewTypeClicked": "any", "_showSearchMobile": "bool", "contentRenderer": "string", "creationMenu": "bool|string|[\n\t\tbutton: ?,\n\t\tcaption: string,\n\t\thelpText: string,\n\t\titems: list<[\n\t\t\tdisabled: bool,\n\t\t\thref: string,\n\t\t\ticon: string,\n\t\t\tlabel: string,\n\t\t\tquickAction: bool,\n\t\t\tseparator: bool,\n\t\t\ttype: string\n\t\t]>\n\t]", "disabled": "bool", "elementClasses": "string", "filterItems": "list<[\n\t\tchecked: bool,\n\t\tdisabled: bool,\n\t\tinputName: string,\n\t\tinputValue: string,\n\t\tlabel: string,\n\t\tseparator: bool,\n\t\ttype: string\n\t]>", "hideFiltersDoneButton": "bool", "id": "string", "searchActionURL": "string", "searchFormName": "string", "searchInputName": "string", "selectable": "bool", "showInfoButton": "bool", "showSearch": "bool", "sortingOrder": "string", "viewTypes": "list<[\n\t\tactive: bool,\n\t\tdisabled: bool,\n\t\ticon: string,\n\t\tlabel: string\n\t]>" };
+  exports.creationMenu.params = ["creationMenu", "spritemap", "_handleCreationButtonClicked"];
+  exports.creationMenu.types = { "creationMenu": "?", "spritemap": "string", "_handleCreationButtonClicked": "any" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -58645,22 +58728,22 @@ goog.loadModule(function (exports) {
   var $render = function $render(opt_data, opt_ijData, opt_ijData_deprecated) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     opt_data = opt_data || {};
+    /** @type {*|null|undefined} */
+    var _handleClickCloseButtonFooter = opt_data._handleClickCloseButtonFooter;
+    /** @type {*|null|undefined} */
+    var _handleClickFooterButton = opt_data._handleClickFooterButton;
+    /** @type {*|null|undefined} */
+    var _handleCloseModal = opt_data._handleCloseModal;
+    /** @type {boolean|null|undefined} */
+    var _isTransitioning = soy.asserts.assertType(opt_data._isTransitioning == null || goog.isBoolean(opt_data._isTransitioning) || opt_data._isTransitioning === 1 || opt_data._isTransitioning === 0, '_isTransitioning', opt_data._isTransitioning, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|function()|null|string|undefined} */
     var body = soy.asserts.assertType(opt_data.body == null || goog.isFunction(opt_data.body) || goog.isString(opt_data.body) || opt_data.body instanceof goog.soy.data.SanitizedContent, 'body', opt_data.body, '!goog.soy.data.SanitizedContent|function()|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<?>|null|undefined} */
     var footerButtons = soy.asserts.assertType(opt_data.footerButtons == null || goog.isArray(opt_data.footerButtons), 'footerButtons', opt_data.footerButtons, '!Array<?>|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleClickCloseButtonFooter_ = opt_data.handleClickCloseButtonFooter_;
-    /** @type {*|null|undefined} */
-    var handleClickFooterButton_ = opt_data.handleClickFooterButton_;
-    /** @type {*|null|undefined} */
-    var handleCloseModal_ = opt_data.handleCloseModal_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {boolean|null|undefined} */
-    var isTransitioning_ = soy.asserts.assertType(opt_data.isTransitioning_ == null || goog.isBoolean(opt_data.isTransitioning_) || opt_data.isTransitioning_ === 1 || opt_data.isTransitioning_ === 0, 'isTransitioning_', opt_data.isTransitioning_, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var size = soy.asserts.assertType(opt_data.size == null || goog.isString(opt_data.size) || opt_data.size instanceof goog.soy.data.SanitizedContent, 'size', opt_data.size, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -58674,7 +58757,7 @@ goog.loadModule(function (exports) {
     /** @type {boolean|null|undefined} */
     var visible = soy.asserts.assertType(opt_data.visible == null || goog.isBoolean(opt_data.visible) || opt_data.visible === 1 || opt_data.visible === 0, 'visible', opt_data.visible, 'boolean|null|undefined');
     var attributes__soy39 = function attributes__soy39() {
-      incrementalDom.attr('class', 'fade modal' + (isTransitioning_ || visible ? ' d-block' : '') + (visible ? ' show' : '') + (elementClasses ? ' ' + elementClasses : ''));
+      incrementalDom.attr('class', 'fade modal' + (_isTransitioning || visible ? ' d-block' : '') + (visible ? ' show' : '') + (elementClasses ? ' ' + elementClasses : ''));
       if (id) {
         incrementalDom.attr('id', id);
       }
@@ -58696,7 +58779,7 @@ goog.loadModule(function (exports) {
     incrementalDom.elementOpenEnd();
     $header(opt_data, null, opt_ijData);
     $body({ content: body, url: url }, null, opt_ijData);
-    $footer({ buttons: footerButtons, handleClickCloseButtonFooter_: handleClickCloseButtonFooter_, handleClickFooterButton_: handleClickFooterButton_ }, null, opt_ijData);
+    $footer({ _handleClickCloseButtonFooter: _handleClickCloseButtonFooter, _handleClickFooterButton: _handleClickFooterButton, buttons: footerButtons }, null, opt_ijData);
     incrementalDom.elementClose('div');
     incrementalDom.elementClose('div');
     incrementalDom.elementClose('div');
@@ -58704,14 +58787,14 @@ goog.loadModule(function (exports) {
   exports.render = $render;
   /**
    * @typedef {{
+   *  _handleClickCloseButtonFooter: (*|null|undefined),
+   *  _handleClickFooterButton: (*|null|undefined),
+   *  _handleCloseModal: (*|null|undefined),
+   *  _isTransitioning: (boolean|null|undefined),
    *  body: (!goog.soy.data.SanitizedContent|function()|null|string|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  footerButtons: (!Array<?>|null|undefined),
-   *  handleClickCloseButtonFooter_: (*|null|undefined),
-   *  handleClickFooterButton_: (*|null|undefined),
-   *  handleCloseModal_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  isTransitioning_: (boolean|null|undefined),
    *  size: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  status: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -58737,7 +58820,7 @@ goog.loadModule(function (exports) {
     var $$temp;
     opt_data = opt_data || {};
     /** @type {*|null|undefined} */
-    var handleCloseModal_ = opt_data.handleCloseModal_;
+    var _handleCloseModal = opt_data._handleCloseModal;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
@@ -58776,7 +58859,7 @@ goog.loadModule(function (exports) {
       soyIdom.print(title);
       incrementalDom.elementClose('div');
       if (spritemap) {
-        $templateAlias2({ elementClasses: 'close', events: { click: handleCloseModal_ }, icon: 'times', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+        $templateAlias2({ elementClasses: 'close', events: { click: _handleCloseModal }, icon: 'times', spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
       }
       incrementalDom.elementClose('div');
     }
@@ -58784,7 +58867,7 @@ goog.loadModule(function (exports) {
   exports.header = $header;
   /**
    * @typedef {{
-   *  handleCloseModal_: (*|null|undefined),
+   *  _handleCloseModal: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  status: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  title: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -58846,12 +58929,12 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     var $$temp;
     opt_data = opt_data || {};
+    /** @type {*|null|undefined} */
+    var _handleClickCloseButtonFooter = opt_data._handleClickCloseButtonFooter;
+    /** @type {*|null|undefined} */
+    var _handleClickFooterButton = opt_data._handleClickFooterButton;
     /** @type {!Array<?>|null|undefined} */
     var buttons = soy.asserts.assertType(opt_data.buttons == null || goog.isArray(opt_data.buttons), 'buttons', opt_data.buttons, '!Array<?>|null|undefined');
-    /** @type {*|null|undefined} */
-    var handleClickCloseButtonFooter_ = opt_data.handleClickCloseButtonFooter_;
-    /** @type {*|null|undefined} */
-    var handleClickFooterButton_ = opt_data.handleClickFooterButton_;
     if (buttons) {
       incrementalDom.elementOpenStart('div');
       incrementalDom.attr('class', 'modal-footer');
@@ -58864,7 +58947,7 @@ goog.loadModule(function (exports) {
       for (var button142Index = 0; button142Index < button142ListLen; button142Index++) {
         var button142Data = button142List[button142Index];
         if (button142Data.alignment == 'left') {
-          $templateAlias2({ events: { click: handleClickFooterButton_ }, label: button142Data.label, style: ($$temp = button142Data.style) == null ? 'secondary' : $$temp, type: !button142Data.type || button142Data.type == 'close' ? 'button' : button142Data.type }, null, opt_ijData);
+          $templateAlias2({ events: { click: _handleClickFooterButton }, label: button142Data.label, style: ($$temp = button142Data.style) == null ? 'secondary' : $$temp, type: !button142Data.type || button142Data.type == 'close' ? 'button' : button142Data.type }, null, opt_ijData);
           incrementalDom.text(' ');
         }
       }
@@ -58878,9 +58961,9 @@ goog.loadModule(function (exports) {
         var button156Data = button156List[button156Index];
         if (!button156Data.alignment || button156Data.alignment == 'right') {
           if (button156Data.type == 'close') {
-            $templateAlias2({ elementClasses: 'close-modal', events: { click: handleClickCloseButtonFooter_ }, label: button156Data.label, style: 'secondary', type: 'button' }, null, opt_ijData);
+            $templateAlias2({ elementClasses: 'close-modal', events: { click: _handleClickCloseButtonFooter }, label: button156Data.label, style: 'secondary', type: 'button' }, null, opt_ijData);
           } else {
-            $templateAlias2({ events: { click: handleClickFooterButton_ }, label: button156Data.label, style: ($$temp = button156Data.style) == null ? 'primary' : $$temp, type: button156Data.type }, null, opt_ijData);
+            $templateAlias2({ events: { click: _handleClickFooterButton }, label: button156Data.label, style: ($$temp = button156Data.style) == null ? 'primary' : $$temp, type: button156Data.type }, null, opt_ijData);
           }
           incrementalDom.text(' ');
         }
@@ -58892,9 +58975,9 @@ goog.loadModule(function (exports) {
   exports.footer = $footer;
   /**
    * @typedef {{
+   *  _handleClickCloseButtonFooter: (*|null|undefined),
+   *  _handleClickFooterButton: (*|null|undefined),
    *  buttons: (!Array<?>|null|undefined),
-   *  handleClickCloseButtonFooter_: (*|null|undefined),
-   *  handleClickFooterButton_: (*|null|undefined),
    * }}
    */
   $footer.Params;
@@ -58930,14 +59013,14 @@ goog.loadModule(function (exports) {
     $iframe.soyTemplateName = 'ClayModal.iframe';
   }
 
-  exports.render.params = ["body", "elementClasses", "footerButtons", "handleClickCloseButtonFooter_", "handleClickFooterButton_", "handleCloseModal_", "id", "isTransitioning_", "size", "spritemap", "status", "title", "url", "visible"];
-  exports.render.types = { "body": "string|html", "elementClasses": "string", "footerButtons": "list<?>", "handleClickCloseButtonFooter_": "any", "handleClickFooterButton_": "any", "handleCloseModal_": "any", "id": "string", "isTransitioning_": "bool", "size": "string", "spritemap": "string", "status": "string", "title": "string", "url": "string", "visible": "bool" };
-  exports.header.params = ["handleCloseModal_", "spritemap", "status", "title"];
-  exports.header.types = { "handleCloseModal_": "any", "spritemap": "string", "status": "string", "title": "string" };
+  exports.render.params = ["_handleClickCloseButtonFooter", "_handleClickFooterButton", "_handleCloseModal", "_isTransitioning", "body", "elementClasses", "footerButtons", "id", "size", "spritemap", "status", "title", "url", "visible"];
+  exports.render.types = { "_handleClickCloseButtonFooter": "any", "_handleClickFooterButton": "any", "_handleCloseModal": "any", "_isTransitioning": "bool", "body": "string|html", "elementClasses": "string", "footerButtons": "list<?>", "id": "string", "size": "string", "spritemap": "string", "status": "string", "title": "string", "url": "string", "visible": "bool" };
+  exports.header.params = ["_handleCloseModal", "spritemap", "status", "title"];
+  exports.header.types = { "_handleCloseModal": "any", "spritemap": "string", "status": "string", "title": "string" };
   exports.body.params = ["content", "url"];
   exports.body.types = { "content": "string|html", "url": "string" };
-  exports.footer.params = ["buttons", "handleClickCloseButtonFooter_", "handleClickFooterButton_"];
-  exports.footer.types = { "buttons": "list<?>", "handleClickCloseButtonFooter_": "any", "handleClickFooterButton_": "any" };
+  exports.footer.params = ["_handleClickCloseButtonFooter", "_handleClickFooterButton", "buttons"];
+  exports.footer.types = { "_handleClickCloseButtonFooter": "any", "_handleClickFooterButton": "any", "buttons": "list<?>" };
   exports.iframe.params = ["url"];
   exports.iframe.types = { "url": "string" };
   exports.templates = templates = exports;
@@ -59026,18 +59109,18 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<{active: boolean, href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>');
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
+    /** @type {*|null|undefined} */
+    var _handleClickToggler = opt_data._handleClickToggler;
+    /** @type {boolean|null|undefined} */
+    var _isTransitioning = soy.asserts.assertType(opt_data._isTransitioning == null || goog.isBoolean(opt_data._isTransitioning) || opt_data._isTransitioning === 1 || opt_data._isTransitioning === 0, '_isTransitioning', opt_data._isTransitioning, 'boolean|null|undefined');
+    /** @type {boolean|null|undefined} */
+    var _visible = soy.asserts.assertType(opt_data._visible == null || goog.isBoolean(opt_data._visible) || opt_data._visible === 1 || opt_data._visible === 0, '_visible', opt_data._visible, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleClickToggler_ = opt_data.handleClickToggler_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var inverted = soy.asserts.assertType(opt_data.inverted == null || goog.isBoolean(opt_data.inverted) || opt_data.inverted === 1 || opt_data.inverted === 0, 'inverted', opt_data.inverted, 'boolean|null|undefined');
-    /** @type {boolean|null|undefined} */
-    var isTransitioning_ = soy.asserts.assertType(opt_data.isTransitioning_ == null || goog.isBoolean(opt_data.isTransitioning_) || opt_data.isTransitioning_ === 1 || opt_data.isTransitioning_ === 0, 'isTransitioning_', opt_data.isTransitioning_, 'boolean|null|undefined');
-    /** @type {boolean|null|undefined} */
-    var visible_ = soy.asserts.assertType(opt_data.visible_ == null || goog.isBoolean(opt_data.visible_) || opt_data.visible_ === 1 || opt_data.visible_ === 0, 'visible_', opt_data.visible_, 'boolean|null|undefined');
     var attributes__soy31 = function attributes__soy31() {
       incrementalDom.attr('class', 'navbar navbar-collapse-absolute navbar-expand-md navbar-underline navigation-bar' + (inverted ? ' navigation-bar-secondary' : ' navigation-bar-light') + (elementClasses ? ' ' + elementClasses : ''));
       if (id) {
@@ -59062,12 +59145,12 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  items: !Array<{active: boolean, href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
+   *  _handleClickToggler: (*|null|undefined),
+   *  _isTransitioning: (boolean|null|undefined),
+   *  _visible: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleClickToggler_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  inverted: (boolean|null|undefined),
-   *  isTransitioning_: (boolean|null|undefined),
-   *  visible_: (boolean|null|undefined),
    * }}
    */
   $render.Params;
@@ -59089,13 +59172,13 @@ goog.loadModule(function (exports) {
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {boolean|null|undefined} */
-    var isTransitioning_ = soy.asserts.assertType(opt_data.isTransitioning_ == null || goog.isBoolean(opt_data.isTransitioning_) || opt_data.isTransitioning_ === 1 || opt_data.isTransitioning_ === 0, 'isTransitioning_', opt_data.isTransitioning_, 'boolean|null|undefined');
+    var _isTransitioning = soy.asserts.assertType(opt_data._isTransitioning == null || goog.isBoolean(opt_data._isTransitioning) || opt_data._isTransitioning === 1 || opt_data._isTransitioning === 0, '_isTransitioning', opt_data._isTransitioning, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
-    var visible_ = soy.asserts.assertType(opt_data.visible_ == null || goog.isBoolean(opt_data.visible_) || opt_data.visible_ === 1 || opt_data.visible_ === 0, 'visible_', opt_data.visible_, 'boolean|null|undefined');
+    var _visible = soy.asserts.assertType(opt_data._visible == null || goog.isBoolean(opt_data._visible) || opt_data._visible === 1 || opt_data._visible === 0, '_visible', opt_data._visible, 'boolean|null|undefined');
     var classes__soy68 = '';
     classes__soy68 += 'navbar-collapse';
-    classes__soy68 += isTransitioning_ ? ' collapsing' : ' collapse';
-    classes__soy68 += visible_ ? ' show' : '';
+    classes__soy68 += _isTransitioning ? ' collapsing' : ' collapse';
+    classes__soy68 += _visible ? ' show' : '';
     incrementalDom.elementOpenStart('div');
     incrementalDom.attr('class', classes__soy68);
     incrementalDom.elementOpenEnd();
@@ -59113,8 +59196,8 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  items: !Array<{active: boolean, href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
-   *  isTransitioning_: (boolean|null|undefined),
-   *  visible_: (boolean|null|undefined),
+   *  _isTransitioning: (boolean|null|undefined),
+   *  _visible: (boolean|null|undefined),
    * }}
    */
   $content.Params;
@@ -59210,12 +59293,12 @@ goog.loadModule(function (exports) {
     /** @type {!goog.soy.data.SanitizedContent|string} */
     var spritemap = soy.asserts.assertType(goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|string');
     /** @type {*|null|undefined} */
-    var handleClickToggler_ = opt_data.handleClickToggler_;
+    var _handleClickToggler = opt_data._handleClickToggler;
     /** @type {boolean|null|undefined} */
-    var visible_ = soy.asserts.assertType(opt_data.visible_ == null || goog.isBoolean(opt_data.visible_) || opt_data.visible_ === 1 || opt_data.visible_ === 0, 'visible_', opt_data.visible_, 'boolean|null|undefined');
+    var _visible = soy.asserts.assertType(opt_data._visible == null || goog.isBoolean(opt_data._visible) || opt_data._visible === 1 || opt_data._visible === 0, '_visible', opt_data._visible, 'boolean|null|undefined');
     var classes__soy129 = '';
     classes__soy129 += 'navbar-toggler navbar-toggler-link';
-    classes__soy129 += !visible_ ? ' collapsed' : '';
+    classes__soy129 += !_visible ? ' collapsed' : '';
     var param149 = '';
     var item139List = items;
     var item139ListLen = item139List.length;
@@ -59223,15 +59306,15 @@ goog.loadModule(function (exports) {
       var item139Data = item139List[item139Index];
       param149 += item139Data.active == true ? item139Data.label : '';
     }
-    $templateAlias1({ ariaExpanded: visible_, ariaLabel: 'Toggle Navigation', elementClasses: classes__soy129, events: { click: handleClickToggler_ }, href: '#', icon: 'caret-bottom', iconAlignment: 'right', label: param149, spritemap: spritemap }, null, opt_ijData);
+    $templateAlias1({ ariaExpanded: _visible, ariaLabel: 'Toggle Navigation', elementClasses: classes__soy129, events: { click: _handleClickToggler }, href: '#', icon: 'caret-bottom', iconAlignment: 'right', label: param149, spritemap: spritemap }, null, opt_ijData);
   };
   exports.toggler = $toggler;
   /**
    * @typedef {{
    *  items: !Array<{active: boolean, href: (!goog.soy.data.SanitizedContent|string), label: (!goog.soy.data.SanitizedContent|string),}>,
    *  spritemap: (!goog.soy.data.SanitizedContent|string),
-   *  handleClickToggler_: (*|null|undefined),
-   *  visible_: (boolean|null|undefined),
+   *  _handleClickToggler: (*|null|undefined),
+   *  _visible: (boolean|null|undefined),
    * }}
    */
   $toggler.Params;
@@ -59239,16 +59322,16 @@ goog.loadModule(function (exports) {
     $toggler.soyTemplateName = 'ClayNavigationBar.toggler';
   }
 
-  exports.render.params = ["items", "spritemap", "elementClasses", "handleClickToggler_", "id", "inverted", "isTransitioning_", "visible_"];
-  exports.render.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "elementClasses": "string", "handleClickToggler_": "any", "id": "string", "inverted": "bool", "isTransitioning_": "bool", "visible_": "bool" };
-  exports.content.params = ["items", "spritemap", "isTransitioning_", "visible_"];
-  exports.content.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "isTransitioning_": "bool", "visible_": "bool" };
+  exports.render.params = ["items", "spritemap", "_handleClickToggler", "_isTransitioning", "_visible", "elementClasses", "id", "inverted"];
+  exports.render.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "_handleClickToggler": "any", "_isTransitioning": "bool", "_visible": "bool", "elementClasses": "string", "id": "string", "inverted": "bool" };
+  exports.content.params = ["items", "spritemap", "_isTransitioning", "_visible"];
+  exports.content.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "_isTransitioning": "bool", "_visible": "bool" };
   exports.navitem.params = ["href", "label", "active"];
   exports.navitem.types = { "href": "string", "label": "string", "active": "bool" };
   exports.navmenu.params = ["items"];
   exports.navmenu.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>" };
-  exports.toggler.params = ["items", "spritemap", "handleClickToggler_", "visible_"];
-  exports.toggler.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "handleClickToggler_": "any", "visible_": "bool" };
+  exports.toggler.params = ["items", "spritemap", "_handleClickToggler", "_visible"];
+  exports.toggler.types = { "items": "list<[\n\t\tactive: bool,\n\t\thref: string,\n\t\tlabel: string\n\t]>", "spritemap": "string", "_handleClickToggler": "any", "_visible": "bool" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -59830,22 +59913,22 @@ goog.loadModule(function (exports) {
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
+    /** @type {boolean|null|undefined} */
+    var inline = soy.asserts.assertType(opt_data.inline == null || goog.isBoolean(opt_data.inline) || opt_data.inline === 1 || opt_data.inline === 0, 'inline', opt_data.inline, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var label = soy.asserts.assertType(opt_data.label == null || goog.isString(opt_data.label) || opt_data.label instanceof goog.soy.data.SanitizedContent, 'label', opt_data.label, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {boolean|null|undefined} */
     var multiple = soy.asserts.assertType(opt_data.multiple == null || goog.isBoolean(opt_data.multiple) || opt_data.multiple === 1 || opt_data.multiple === 0, 'multiple', opt_data.multiple, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var name = soy.asserts.assertType(opt_data.name == null || goog.isString(opt_data.name) || opt_data.name instanceof goog.soy.data.SanitizedContent, 'name', opt_data.name, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
-    var wrapperType = soy.asserts.assertType(opt_data.wrapperType == null || goog.isString(opt_data.wrapperType) || opt_data.wrapperType instanceof goog.soy.data.SanitizedContent, 'wrapperType', opt_data.wrapperType, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    var attributes__soy33 = function attributes__soy33() {
-      incrementalDom.attr('class', (wrapperType ? 'form-' + wrapperType : 'form-group') + (elementClasses ? ' ' + elementClasses : ''));
+    var attributes__soy31 = function attributes__soy31() {
+      incrementalDom.attr('class', (inline ? 'form-group-item' : 'form-group') + (elementClasses ? ' ' + elementClasses : ''));
       if (id) {
         incrementalDom.attr('id', id);
       }
     };
     incrementalDom.elementOpenStart('div');
-    attributes__soy33();
+    attributes__soy31();
     incrementalDom.elementOpenEnd();
     if (label) {
       incrementalDom.elementOpen('label');
@@ -59862,10 +59945,10 @@ goog.loadModule(function (exports) {
    *  disabled: (boolean|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
+   *  inline: (boolean|null|undefined),
    *  label: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  multiple: (boolean|null|undefined),
    *  name: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  wrapperType: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
   $render.Params;
@@ -59892,7 +59975,7 @@ goog.loadModule(function (exports) {
     var multiple = soy.asserts.assertType(opt_data.multiple == null || goog.isBoolean(opt_data.multiple) || opt_data.multiple === 1 || opt_data.multiple === 0, 'multiple', opt_data.multiple, 'boolean|null|undefined');
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var name = soy.asserts.assertType(opt_data.name == null || goog.isString(opt_data.name) || opt_data.name instanceof goog.soy.data.SanitizedContent, 'name', opt_data.name, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    var selectAttributes__soy78 = function selectAttributes__soy78() {
+    var selectAttributes__soy76 = function selectAttributes__soy76() {
       incrementalDom.attr('class', 'form-control');
       if (label) {
         incrementalDom.attr('aria-label', label);
@@ -59908,22 +59991,22 @@ goog.loadModule(function (exports) {
       }
     };
     incrementalDom.elementOpenStart('select');
-    selectAttributes__soy78();
+    selectAttributes__soy76();
     incrementalDom.elementOpenEnd();
-    var option82List = options;
-    var option82ListLen = option82List.length;
-    for (var option82Index = 0; option82Index < option82ListLen; option82Index++) {
-      var option82Data = option82List[option82Index];
-      var optionAttributes__soy92 = function optionAttributes__soy92() {
-        if (option82Data.selected) {
+    var option80List = options;
+    var option80ListLen = option80List.length;
+    for (var option80Index = 0; option80Index < option80ListLen; option80Index++) {
+      var option80Data = option80List[option80Index];
+      var optionAttributes__soy90 = function optionAttributes__soy90() {
+        if (option80Data.selected) {
           incrementalDom.attr('selected', 'selected');
         }
-        incrementalDom.attr('value', option82Data.value);
+        incrementalDom.attr('value', option80Data.value);
       };
       incrementalDom.elementOpenStart('option');
-      optionAttributes__soy92();
+      optionAttributes__soy90();
       incrementalDom.elementOpenEnd();
-      soyIdom.print(option82Data.label);
+      soyIdom.print(option80Data.label);
       incrementalDom.elementClose('option');
     }
     incrementalDom.elementClose('select');
@@ -59943,8 +60026,8 @@ goog.loadModule(function (exports) {
     $select.soyTemplateName = 'ClaySelect.select';
   }
 
-  exports.render.params = ["options", "disabled", "elementClasses", "id", "label", "multiple", "name", "wrapperType"];
-  exports.render.types = { "options": "list<?>", "disabled": "bool", "elementClasses": "string", "id": "string", "label": "string", "multiple": "bool", "name": "string", "wrapperType": "string" };
+  exports.render.params = ["options", "disabled", "elementClasses", "id", "inline", "label", "multiple", "name"];
+  exports.render.types = { "options": "list<?>", "disabled": "bool", "elementClasses": "string", "id": "string", "inline": "bool", "label": "string", "multiple": "bool", "name": "string" };
   exports.select.params = ["options", "disabled", "label", "multiple", "name"];
   exports.select.types = { "options": "list<?>", "disabled": "bool", "label": "string", "multiple": "bool", "name": "string" };
   exports.templates = templates = exports;
@@ -60320,14 +60403,14 @@ goog.loadModule(function (exports) {
     opt_ijData = opt_ijData_deprecated || opt_ijData;
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleCellContentClick = opt_data._handleCellContentClick;
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
+    /** @type {*|null|undefined} */
+    var _handleSortingClick = opt_data._handleSortingClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var elementClasses = soy.asserts.assertType(opt_data.elementClasses == null || goog.isString(opt_data.elementClasses) || opt_data.elementClasses instanceof goog.soy.data.SanitizedContent, 'elementClasses', opt_data.elementClasses, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
-    /** @type {*|null|undefined} */
-    var handleSortingClick_ = opt_data.handleSortingClick_;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<?>|null|undefined} */
@@ -60361,10 +60444,10 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleCellContentClick: (*|null|undefined),
+   *  _handleItemToggled: (*|null|undefined),
+   *  _handleSortingClick: (*|null|undefined),
    *  elementClasses: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCellContentClick_: (*|null|undefined),
-   *  handleItemToggled_: (*|null|undefined),
-   *  handleSortingClick_: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  items: (!Array<?>|null|undefined),
    *  selectable: (boolean|null|undefined),
@@ -60390,9 +60473,9 @@ goog.loadModule(function (exports) {
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var id = soy.asserts.assertType(opt_data.id == null || goog.isString(opt_data.id) || opt_data.id instanceof goog.soy.data.SanitizedContent, 'id', opt_data.id, '!goog.soy.data.SanitizedContent|null|string|undefined');
     /** @type {!Array<?>|null|undefined} */
@@ -60405,7 +60488,7 @@ goog.loadModule(function (exports) {
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('tbody');
     if (items) {
-      $rows({ groupName: id, handleCellContentClick_: handleCellContentClick_, handleItemToggled_: handleItemToggled_, items: items, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
+      $rows({ _handleCellContentClick: _handleCellContentClick, _handleItemToggled: _handleItemToggled, groupName: id, items: items, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
     }
     incrementalDom.elementClose('tbody');
   };
@@ -60413,8 +60496,8 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
-   *  handleCellContentClick_: (*|null|undefined),
-   *  handleItemToggled_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
+   *  _handleItemToggled: (*|null|undefined),
    *  id: (!goog.soy.data.SanitizedContent|null|string|undefined),
    *  items: (!Array<?>|null|undefined),
    *  selectable: (boolean|null|undefined),
@@ -60440,7 +60523,7 @@ goog.loadModule(function (exports) {
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
     /** @type {*|null|undefined} */
-    var handleSortingClick_ = opt_data.handleSortingClick_;
+    var _handleSortingClick = opt_data._handleSortingClick;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -60469,7 +60552,7 @@ goog.loadModule(function (exports) {
         if (!fieldSchema95Data.sortable) {
           soyIdom.print(fieldSchema95Data.label);
         } else {
-          $templateAlias1({ events: { click: handleSortingClick_ }, icon: fieldSchema95Data.sortingOrder ? 'order-arrow-' + (fieldSchema95Data.sortingOrder == 'asc' ? 'up' : 'down') : null, iconAlignment: 'right', label: ($$temp = fieldSchema95Data.label) == null ? fieldSchema95Data.fieldName : $$temp, spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
+          $templateAlias1({ events: { click: _handleSortingClick }, icon: fieldSchema95Data.sortingOrder ? 'order-arrow-' + (fieldSchema95Data.sortingOrder == 'asc' ? 'up' : 'down') : null, iconAlignment: 'right', label: ($$temp = fieldSchema95Data.label) == null ? fieldSchema95Data.fieldName : $$temp, spritemap: spritemap, style: 'unstyled' }, null, opt_ijData);
         }
         incrementalDom.elementClose('th');
       }
@@ -60485,7 +60568,7 @@ goog.loadModule(function (exports) {
   /**
    * @typedef {{
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
-   *  handleSortingClick_: (*|null|undefined),
+   *  _handleSortingClick: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    *  showActionsMenu: (boolean|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -60509,12 +60592,12 @@ goog.loadModule(function (exports) {
     var item = opt_data.item;
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleCellContentClick = opt_data._handleCellContentClick;
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -60540,7 +60623,7 @@ goog.loadModule(function (exports) {
       } else {
         $tmp$$1 = '';
       }
-      $templateAlias2({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: item.selected, disabled: item.disabled, events: { change: handleItemToggled_ }, hideLabel: true, label: item.selected ? 'Select' : 'Deselect', name: '' + $tmp$$1, value: item[schema.inputValueField] }, null, opt_ijData);
+      $templateAlias2({ ariaLabelledBy: groupName ? 'group-' + groupName : null, checked: item.selected, disabled: item.disabled, events: { change: _handleItemToggled }, hideLabel: true, label: item.selected ? 'Select' : 'Deselect', name: '' + $tmp$$1, value: item[schema.inputValueField] }, null, opt_ijData);
       incrementalDom.elementClose('td');
     }
     if (schema.fields) {
@@ -60570,7 +60653,7 @@ goog.loadModule(function (exports) {
           $tmp$$3 = '';
         }
         variant__soy202 += $tmp$$3;
-        soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayTable.Cell.idom'), variant__soy202, false)({ fieldSchema: fieldSchema176Data, handleCellContentClick_: handleCellContentClick_, item: item, spritemap: spritemap, value: item[fieldSchema176Data.fieldName] }, null, opt_ijData);
+        soy.$$getDelegateFn(soy.$$getDelTemplateId('ClayTable.Cell.idom'), variant__soy202, false)({ _handleCellContentClick: _handleCellContentClick, fieldSchema: fieldSchema176Data, item: item, spritemap: spritemap, value: item[fieldSchema176Data.fieldName] }, null, opt_ijData);
       }
     }
     if (showActionsMenu && item.actionItems && spritemap) {
@@ -60597,9 +60680,9 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  item: ?,
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleCellContentClick: (*|null|undefined),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCellContentClick_: (*|null|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    *  showActionsMenu: (boolean|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -60623,12 +60706,12 @@ goog.loadModule(function (exports) {
     var items = soy.asserts.assertType(goog.isArray(opt_data.items), 'items', opt_data.items, '!Array<?>');
     /** @type {{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}} */
     var schema = soy.asserts.assertType(goog.isObject(opt_data.schema), 'schema', opt_data.schema, '{fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),}');
+    /** @type {*|null|undefined} */
+    var _handleCellContentClick = opt_data._handleCellContentClick;
+    /** @type {*|null|undefined} */
+    var _handleItemToggled = opt_data._handleItemToggled;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var groupName = soy.asserts.assertType(opt_data.groupName == null || goog.isString(opt_data.groupName) || opt_data.groupName instanceof goog.soy.data.SanitizedContent, 'groupName', opt_data.groupName, '!goog.soy.data.SanitizedContent|null|string|undefined');
-    /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
-    /** @type {*|null|undefined} */
-    var handleItemToggled_ = opt_data.handleItemToggled_;
     /** @type {boolean|null|undefined} */
     var selectable = soy.asserts.assertType(opt_data.selectable == null || goog.isBoolean(opt_data.selectable) || opt_data.selectable === 1 || opt_data.selectable === 0, 'selectable', opt_data.selectable, 'boolean|null|undefined');
     /** @type {boolean|null|undefined} */
@@ -60659,9 +60742,9 @@ goog.loadModule(function (exports) {
         soyIdom.print(item246Data.label);
         incrementalDom.elementClose('td');
         incrementalDom.elementClose('tr');
-        $rows({ groupName: currentgroupName__soy261, handleCellContentClick_: handleCellContentClick_, handleItemToggled_: handleItemToggled_, items: item246Data.items, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
+        $rows({ _handleCellContentClick: _handleCellContentClick, _handleItemToggled: _handleItemToggled, groupName: currentgroupName__soy261, items: item246Data.items, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
       } else {
-        $row({ groupName: groupName, handleCellContentClick_: handleCellContentClick_, handleItemToggled_: handleItemToggled_, item: item246Data, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
+        $row({ _handleCellContentClick: _handleCellContentClick, _handleItemToggled: _handleItemToggled, groupName: groupName, item: item246Data, schema: schema, selectable: selectable, showActionsMenu: showActionsMenu, spritemap: spritemap }, null, opt_ijData);
       }
     }
   };
@@ -60670,9 +60753,9 @@ goog.loadModule(function (exports) {
    * @typedef {{
    *  items: !Array<?>,
    *  schema: {fields: !Array<{contentRenderer: (!goog.soy.data.SanitizedContent|string), contentRendererMap: ?, fieldName: (!goog.soy.data.SanitizedContent|string), fieldsMap: ?, label: (!goog.soy.data.SanitizedContent|string), sortable: boolean, sortingOrder: (!goog.soy.data.SanitizedContent|string),}>, inputName: (!goog.soy.data.SanitizedContent|string), inputNameField: (!goog.soy.data.SanitizedContent|string), inputNamesMap: ?, inputValueField: (!goog.soy.data.SanitizedContent|string),},
+   *  _handleCellContentClick: (*|null|undefined),
+   *  _handleItemToggled: (*|null|undefined),
    *  groupName: (!goog.soy.data.SanitizedContent|null|string|undefined),
-   *  handleCellContentClick_: (*|null|undefined),
-   *  handleItemToggled_: (*|null|undefined),
    *  selectable: (boolean|null|undefined),
    *  showActionsMenu: (boolean|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
@@ -60699,7 +60782,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('td');
@@ -60716,7 +60799,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60742,11 +60825,11 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('td');
-    $templateAlias1({ events: { click: handleCellContentClick_ }, label: fieldSchema.label, size: 'sm', style: 'secondary', type: fieldSchema.buttonStyle }, null, opt_ijData);
+    $templateAlias1({ events: { click: _handleCellContentClick }, label: fieldSchema.label, size: 'sm', style: 'secondary', type: fieldSchema.buttonStyle }, null, opt_ijData);
     incrementalDom.elementClose('td');
   };
   exports.__deltemplate__ClayTable_Cell_button = __deltemplate__ClayTable_Cell_button;
@@ -60755,7 +60838,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60782,7 +60865,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('td');
@@ -60804,7 +60887,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60830,7 +60913,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('td');
@@ -60843,7 +60926,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60869,7 +60952,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpenStart('td');
@@ -60900,7 +60983,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60926,7 +61009,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpenStart('td');
@@ -60941,7 +61024,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60967,7 +61050,7 @@ goog.loadModule(function (exports) {
     /** @type {?} */
     var value = opt_data.value;
     /** @type {*|null|undefined} */
-    var handleCellContentClick_ = opt_data.handleCellContentClick_;
+    var _handleCellContentClick = opt_data._handleCellContentClick;
     /** @type {!goog.soy.data.SanitizedContent|null|string|undefined} */
     var spritemap = soy.asserts.assertType(opt_data.spritemap == null || goog.isString(opt_data.spritemap) || opt_data.spritemap instanceof goog.soy.data.SanitizedContent, 'spritemap', opt_data.spritemap, '!goog.soy.data.SanitizedContent|null|string|undefined');
     incrementalDom.elementOpen('td');
@@ -60980,7 +61063,7 @@ goog.loadModule(function (exports) {
    *  fieldSchema: ?,
    *  item: ?,
    *  value: ?,
-   *  handleCellContentClick_: (*|null|undefined),
+   *  _handleCellContentClick: (*|null|undefined),
    *  spritemap: (!goog.soy.data.SanitizedContent|null|string|undefined),
    * }}
    */
@@ -60990,16 +61073,16 @@ goog.loadModule(function (exports) {
   }
   soy.$$registerDelegateFn(soy.$$getDelTemplateId('ClayTable.Cell.idom'), 'progressbar', 0, __deltemplate__ClayTable_Cell_progressbar);
 
-  exports.render.params = ["schema", "elementClasses", "handleCellContentClick_", "handleItemToggled_", "handleSortingClick_", "id", "items", "selectable", "showActionsMenu", "size", "spritemap"];
-  exports.render.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "elementClasses": "string", "handleCellContentClick_": "any", "handleItemToggled_": "any", "handleSortingClick_": "any", "id": "string", "items": "list<?>", "selectable": "bool", "showActionsMenu": "bool", "size": "string", "spritemap": "string" };
-  exports.body.params = ["schema", "handleCellContentClick_", "handleItemToggled_", "id", "items", "selectable", "showActionsMenu", "spritemap"];
-  exports.body.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "handleCellContentClick_": "any", "handleItemToggled_": "any", "id": "string", "items": "list<?>", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
-  exports.header.params = ["schema", "handleSortingClick_", "selectable", "showActionsMenu", "spritemap"];
-  exports.header.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "handleSortingClick_": "any", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
-  exports.row.params = ["item", "schema", "groupName", "handleCellContentClick_", "handleItemToggled_", "selectable", "showActionsMenu", "spritemap"];
-  exports.row.types = { "item": "?", "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "groupName": "string", "handleCellContentClick_": "any", "handleItemToggled_": "any", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
-  exports.rows.params = ["items", "schema", "groupName", "handleCellContentClick_", "handleItemToggled_", "selectable", "showActionsMenu", "spritemap"];
-  exports.rows.types = { "items": "list<?>", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "groupName": "string", "handleCellContentClick_": "any", "handleItemToggled_": "any", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
+  exports.render.params = ["schema", "_handleCellContentClick", "_handleItemToggled", "_handleSortingClick", "elementClasses", "id", "items", "selectable", "showActionsMenu", "size", "spritemap"];
+  exports.render.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleCellContentClick": "any", "_handleItemToggled": "any", "_handleSortingClick": "any", "elementClasses": "string", "id": "string", "items": "list<?>", "selectable": "bool", "showActionsMenu": "bool", "size": "string", "spritemap": "string" };
+  exports.body.params = ["schema", "_handleCellContentClick", "_handleItemToggled", "id", "items", "selectable", "showActionsMenu", "spritemap"];
+  exports.body.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleCellContentClick": "any", "_handleItemToggled": "any", "id": "string", "items": "list<?>", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
+  exports.header.params = ["schema", "_handleSortingClick", "selectable", "showActionsMenu", "spritemap"];
+  exports.header.types = { "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleSortingClick": "any", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
+  exports.row.params = ["item", "schema", "_handleCellContentClick", "_handleItemToggled", "groupName", "selectable", "showActionsMenu", "spritemap"];
+  exports.row.types = { "item": "?", "schema": "[\n\t\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleCellContentClick": "any", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
+  exports.rows.params = ["items", "schema", "_handleCellContentClick", "_handleItemToggled", "groupName", "selectable", "showActionsMenu", "spritemap"];
+  exports.rows.types = { "items": "list<?>", "schema": "[\n\t\tfields: list<[\n\t\t\tcontentRenderer: string,\n\t\t\tcontentRendererMap: ?,\n\t\t\tfieldName: string,\n\t\t\tfieldsMap: ?,\n\t\t\tlabel: string,\n\t\t\tsortable: bool,\n\t\t\tsortingOrder: string\n\t\t]>,\n\t\tinputName: string,\n\t\tinputNameField: string,\n\t\tinputNamesMap: ?,\n\t\tinputValueField: string\n\t]", "_handleCellContentClick": "any", "_handleItemToggled": "any", "groupName": "string", "selectable": "bool", "showActionsMenu": "bool", "spritemap": "string" };
   exports.templates = templates = exports;
   return exports;
 });
@@ -61108,7 +61191,7 @@ var ClayAlert = function (_Component) {
      * @inheritDoc
      */
     value: function attached() {
-      this.addListener('hide', this.defaultHideAlert_, true);
+      this.addListener('hide', this._defaultHideAlert, true);
     }
 
     /**
@@ -61117,8 +61200,8 @@ var ClayAlert = function (_Component) {
      */
 
   }, {
-    key: 'defaultHideAlert_',
-    value: function defaultHideAlert_() {
+    key: '_defaultHideAlert',
+    value: function _defaultHideAlert() {
       if (this.destroyOnHide) {
         this.dispose();
       }
@@ -61130,8 +61213,8 @@ var ClayAlert = function (_Component) {
      */
 
   }, {
-    key: 'handleHide_',
-    value: function handleHide_() {
+    key: '_handleHide',
+    value: function _handleHide() {
       return !this.emit('hide');
     }
   }]);
@@ -61311,7 +61394,7 @@ var ClayStripe = function (_Component) {
      * @inheritDoc
      */
     value: function attached() {
-      this.addListener('hide', this.defaultHideStripe_, true);
+      this.addListener('hide', this._defaultHideStripe, true);
     }
 
     /**
@@ -61320,8 +61403,8 @@ var ClayStripe = function (_Component) {
      */
 
   }, {
-    key: 'defaultHideStripe_',
-    value: function defaultHideStripe_() {
+    key: '_defaultHideStripe',
+    value: function _defaultHideStripe() {
       if (this.destroyOnHide) {
         this.dispose();
       }
@@ -61333,8 +61416,8 @@ var ClayStripe = function (_Component) {
      */
 
   }, {
-    key: 'handleHide_',
-    value: function handleHide_() {
+    key: '_handleHide',
+    value: function _handleHide() {
       return !this.emit('hide');
     }
   }]);
@@ -61514,7 +61597,7 @@ var ClayToast = function (_Component) {
      * @inheritDoc
      */
     value: function attached() {
-      this.addListener('hide', this.defaultHideToast_, true);
+      this.addListener('hide', this._defaultHideToast, true);
     }
 
     /**
@@ -61523,8 +61606,8 @@ var ClayToast = function (_Component) {
      */
 
   }, {
-    key: 'defaultHideToast_',
-    value: function defaultHideToast_() {
+    key: '_defaultHideToast',
+    value: function _defaultHideToast() {
       if (this.destroyOnHide) {
         this.dispose();
       }
@@ -61536,8 +61619,8 @@ var ClayToast = function (_Component) {
      */
 
   }, {
-    key: 'handleHide_',
-    value: function handleHide_() {
+    key: '_handleHide',
+    value: function _handleHide() {
       return !this.emit('hide');
     }
   }]);
@@ -61719,14 +61802,14 @@ var ClayFileCard = function (_Component) {
   }
 
   _createClass(ClayFileCard, [{
-    key: 'handleItemToggled_',
+    key: '_handleItemToggled',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemToggled_(event) {
+    value: function _handleItemToggled(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -62006,14 +62089,14 @@ var ClayHorizontalCard = function (_Component) {
   }
 
   _createClass(ClayHorizontalCard, [{
-    key: 'handleItemCheckboxClick_',
+    key: '_handleItemCheckboxClick',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemCheckboxClick_(event) {
+    value: function _handleItemCheckboxClick(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -62241,14 +62324,14 @@ var ClayImageCard = function (_Component) {
   }
 
   _createClass(ClayImageCard, [{
-    key: 'handleItemToggled_',
+    key: '_handleItemToggled',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemToggled_(event) {
+    value: function _handleItemToggled(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -62546,14 +62629,14 @@ var ClayUserCard = function (_Component) {
   }
 
   _createClass(ClayUserCard, [{
-    key: 'handleItemToggled_',
+    key: '_handleItemToggled',
 
     /**
      * Continues the propagation of the checkbox changed event
      * @param {!Event} event
      * @private
      */
-    value: function handleItemToggled_(event) {
+    value: function _handleItemToggled(event) {
       this.emit('itemToggled', event);
     }
   }]);
@@ -63501,14 +63584,14 @@ var Geomap = function (_Component) {
    * @inheritDoc
    */
 		value: function attached() {
-			var w = typeof this.width_ === 'string' ? this.width_ : this.width_ + 'px';
-			var h = typeof this.height_ === 'string' ? this.height_ : this.height_ + 'px';
+			var w = typeof this._width === 'string' ? this._width : this._width + 'px';
+			var h = typeof this._height === 'string' ? this._height : this._height + 'px';
 
 			this.svg = d3.select(this.element).append('svg').attr('width', w).attr('height', h);
 
-			this.handleClickHandler_ = this.handleClick_.bind(this);
+			this._handleClickHandler = this._handleClick.bind(this);
 
-			this.rect = this.svg.append('rect').attr('fill', 'rgba(1, 1, 1, 0)').attr('width', w).attr('height', h).on('click', this.handleClickHandler_);
+			this.rect = this.svg.append('rect').attr('fill', 'rgba(1, 1, 1, 0)').attr('width', w).attr('height', h).on('click', this._handleClickHandler);
 
 			var bounds = this.svg.node().getBoundingClientRect();
 
@@ -63517,9 +63600,9 @@ var Geomap = function (_Component) {
 			this.projection = d3.geoMercator().scale(100).translate([bounds.width / 2, bounds.height / 2]);
 
 			this.path = d3.geoPath().projection(this.projection);
-			this.selected_ = null;
+			this._selected = null;
 
-			d3.json(this.data, this.onDataLoad_.bind(this));
+			d3.json(this.data, this._onDataLoad.bind(this));
 		}
 
 		/**
@@ -63530,8 +63613,8 @@ var Geomap = function (_Component) {
    */
 
 	}, {
-		key: 'fillFn_',
-		value: function fillFn_(d) {
+		key: '_fillFn',
+		value: function _fillFn(d) {
 			var value = d && d.properties ? d.properties[this.color.value] : 0;
 			return this.colorScale(value);
 		}
@@ -63543,19 +63626,19 @@ var Geomap = function (_Component) {
    */
 
 	}, {
-		key: 'handleClick_',
-		value: function handleClick_(d) {
+		key: '_handleClick',
+		value: function _handleClick(d) {
 			var _this2 = this;
 
-			if (d && this.selected_ !== d) {
-				this.selected_ = d;
+			if (d && this._selected !== d) {
+				this._selected = d;
 			} else {
-				this.selected_ = null;
+				this._selected = null;
 			}
 
 			// Highlight the clicked province
 			this.mapLayer.selectAll('path').style('fill', function (d) {
-				return _this2.selected_ && d === _this2.selected_ ? _this2.color.selected : _this2.fillFn_.bind(_this2)(d);
+				return _this2._selected && d === _this2._selected ? _this2.color.selected : _this2._fillFn.bind(_this2)(d);
 			});
 		}
 
@@ -63568,8 +63651,8 @@ var Geomap = function (_Component) {
    */
 
 	}, {
-		key: 'handleMouseOver_',
-		value: function handleMouseOver_(feature, idx, selection) {
+		key: '_handleMouseOver',
+		value: function _handleMouseOver(feature, idx, selection) {
 			var node = selection[idx];
 			d3.select(node).style('fill', this.color.selected);
 		}
@@ -63583,10 +63666,10 @@ var Geomap = function (_Component) {
    */
 
 	}, {
-		key: 'handleMouseOut_',
-		value: function handleMouseOut_(feature, idx, selection) {
+		key: '_handleMouseOut',
+		value: function _handleMouseOut(feature, idx, selection) {
 			var node = selection[idx];
-			d3.select(node).style('fill', this.fillFn_.bind(this));
+			d3.select(node).style('fill', this._fillFn.bind(this));
 		}
 
 		/**
@@ -63597,8 +63680,8 @@ var Geomap = function (_Component) {
    */
 
 	}, {
-		key: 'onDataLoad_',
-		value: function onDataLoad_(err, mapData) {
+		key: '_onDataLoad',
+		value: function _onDataLoad(err, mapData) {
 			var _this3 = this;
 
 			if (err) {
@@ -63611,12 +63694,12 @@ var Geomap = function (_Component) {
 				return f.properties[_this3.color.value];
 			});
 
-			this.domainMin_ = Math.min.apply(null, values);
-			this.domainMax_ = Math.max.apply(null, values);
+			this._domainMin = Math.min.apply(null, values);
+			this._domainMax = Math.max.apply(null, values);
 
-			this.colorScale = d3.scaleLinear().domain([this.domainMin_, this.domainMax_]).range([this.color.range.min, this.color.range.max]);
+			this.colorScale = d3.scaleLinear().domain([this._domainMin, this._domainMax]).range([this.color.range.min, this.color.range.max]);
 
-			this.mapLayer.selectAll('path').data(features).enter().append('path').attr('d', this.path).attr('vector-effect', 'non-scaling-stroke').attr('fill', this.fillFn_.bind(this)).on('click', this.handleClickHandler_).on('mouseout', this.handleMouseOut_.bind(this)).on('mouseover', this.handleMouseOver_.bind(this));
+			this.mapLayer.selectAll('path').data(features).enter().append('path').attr('d', this.path).attr('vector-effect', 'non-scaling-stroke').attr('fill', this._fillFn.bind(this)).on('click', this._handleClickHandler).on('mouseout', this._handleMouseOut.bind(this)).on('mouseover', this._handleMouseOver.bind(this));
 		}
 	}]);
 
@@ -63631,6 +63714,40 @@ _metalSoy2.default.register(Geomap, _GeomapSoy2.default);
  * @static
  */
 Geomap.STATE = {
+	/**
+  * Minimum value for domain
+  * @instance
+  * @memberof Geomap
+  * @type {Number}
+  */
+	_domainMin: _metalState.Config.number().internal(),
+
+	/**
+  * Maximum value for domain
+  * @instance
+  * @memberOf Geomap
+  * @type {Number}
+  */
+	_domainMax: _metalState.Config.number().internal(),
+
+	/**
+  * Height of the map
+  * @instance
+  * @memberof Geomap
+  * @type {?Number}
+  * @default 480
+  */
+	_height: _metalState.Config.oneOfType([_metalState.Config.string(), _metalState.Config.number()]).value('100%').internal(),
+
+	/**
+  * Width of the map
+  * @instance
+  * @memberof Geomap
+  * @type {?Number}
+  * @default 640
+  */
+	_width: _metalState.Config.oneOfType([_metalState.Config.string(), _metalState.Config.number()]).value('100%').internal(),
+
 	/**
   * Color configuration.
   * @instance
@@ -63655,47 +63772,13 @@ Geomap.STATE = {
 	}),
 
 	/**
-  * Minimum value for domain
-  * @instance
-  * @memberof Geomap
-  * @type {Number}
-  */
-	domainMin_: _metalState.Config.number().internal(),
-
-	/**
-  * Maximum value for domain
-  * @instance
-  * @memberOf Geomap
-  * @type {Number}
-  */
-	domainMax_: _metalState.Config.number().internal(),
-
-	/**
   * Path to the geo-json data
   * @instance
   * @memberof Geomap
   * @type {?String|undefined}
   * @default undefined
   */
-	data: _metalState.Config.string().required(),
-
-	/**
-  * Height of the map
-  * @instance
-  * @memberof Geomap
-  * @type {?Number}
-  * @default 480
-  */
-	height_: _metalState.Config.oneOfType([_metalState.Config.string(), _metalState.Config.number()]).value('100%').internal(),
-
-	/**
-  * Width of the map
-  * @instance
-  * @memberof Geomap
-  * @type {?Number}
-  * @default 640
-  */
-	width_: _metalState.Config.oneOfType([_metalState.Config.string(), _metalState.Config.number()]).value('100%').internal()
+	data: _metalState.Config.string().required()
 };
 
 exports.Geomap = Geomap;
@@ -64272,14 +64355,14 @@ var ClayActionsDropdown = function (_Component) {
   }
 
   _createClass(ClayActionsDropdown, [{
-    key: 'handleButtonClick_',
+    key: '_handleButtonClick',
 
     /**
      * Handles footer button click.
      * @param {!Event} event
      * @protected
      */
-    value: function handleButtonClick_(event) {
+    value: function _handleButtonClick(event) {
       this.emit('buttonClicked', event);
     }
 
@@ -64290,8 +64373,8 @@ var ClayActionsDropdown = function (_Component) {
      */
 
   }, {
-    key: 'handleItemClick_',
-    value: function handleItemClick_(event) {
+    key: '_handleItemClick',
+    value: function _handleItemClick(event) {
       this.emit('itemClicked', event);
     }
   }]);
@@ -64494,14 +64577,14 @@ var ClayDropdown = function (_Component) {
   }
 
   _createClass(ClayDropdown, [{
-    key: 'handleButtonClick_',
+    key: '_handleButtonClick',
 
     /**
      * Handles footer button click.
      * @param {!Event} event
      * @protected
      */
-    value: function handleButtonClick_(event) {
+    value: function _handleButtonClick(event) {
       this.emit('buttonClicked', event);
     }
 
@@ -64512,8 +64595,8 @@ var ClayDropdown = function (_Component) {
      */
 
   }, {
-    key: 'handleItemClick_',
-    value: function handleItemClick_(event) {
+    key: '_handleItemClick',
+    value: function _handleItemClick(event) {
       this.emit('itemClicked', event);
     }
   }]);
@@ -64750,7 +64833,7 @@ var ClayManagementToolbar = function (_Component) {
   }
 
   _createClass(ClayManagementToolbar, [{
-    key: 'getDropdownItemIndex_',
+    key: '_getDropdownItemIndex',
 
     /**
      * Returns the dropdown index of the element.
@@ -64758,7 +64841,7 @@ var ClayManagementToolbar = function (_Component) {
      * @return {?array|undefined} the index.
      * @private
      */
-    value: function getDropdownItemIndex_(element) {
+    value: function _getDropdownItemIndex(element) {
       return Array.prototype.indexOf.call(Array.prototype.filter.call(element.parentElement.children, function (childrenElement) {
         return childrenElement.getAttribute('role') !== 'presentation';
       }), element);
@@ -64771,10 +64854,10 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleActionClicked_',
-    value: function handleActionClicked_(event) {
+    key: '_handleActionClicked',
+    value: function _handleActionClicked(event) {
       var element = event.delegateTarget;
-      var elementIndex = this.getDropdownItemIndex_(element);
+      var elementIndex = this._getDropdownItemIndex(element);
       var item = this.actionItems[elementIndex];
 
       this.emit('actionClicked', {
@@ -64788,9 +64871,9 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleCloseMobileSearchClick_',
-    value: function handleCloseMobileSearchClick_() {
-      this.showSearch_ = false;
+    key: '_handleCloseMobileSearchClick',
+    value: function _handleCloseMobileSearchClick() {
+      this._showSearchMobile = false;
     }
 
     /**
@@ -64800,8 +64883,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleCreationButtonClicked_',
-    value: function handleCreationButtonClicked_(event) {
+    key: '_handleCreationButtonClicked',
+    value: function _handleCreationButtonClicked(event) {
       this.emit('creationButtonClicked', event);
     }
 
@@ -64812,8 +64895,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleDeselectAllClicked_',
-    value: function handleDeselectAllClicked_(event) {
+    key: '_handleDeselectAllClicked',
+    value: function _handleDeselectAllClicked(event) {
       this.emit('deselectAllClicked', event);
     }
 
@@ -64824,9 +64907,21 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleFilterDoneButtonClick_',
-    value: function handleFilterDoneButtonClick_(event) {
+    key: '_handleFilterDoneButtonClick',
+    value: function _handleFilterDoneButtonClick(event) {
       this.emit('filterDoneClicked', event);
+    }
+
+    /**
+     * Continues the propagation of the Info button clicked event
+     * @param {!Event} event
+     * @private
+     */
+
+  }, {
+    key: '_handleInfoButtonClicked',
+    value: function _handleInfoButtonClicked(event) {
+      this.emit('infoButtonClicked', event);
     }
 
     /**
@@ -64835,9 +64930,9 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleOpenMobileSearchClick_',
-    value: function handleOpenMobileSearchClick_() {
-      this.showSearch_ = true;
+    key: '_handleOpenMobileSearchClick',
+    value: function _handleOpenMobileSearchClick() {
+      this._showSearchMobile = true;
     }
 
     /**
@@ -64848,8 +64943,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleSearchSearchClick_',
-    value: function handleSearchSearchClick_(event) {
+    key: '_handleSearchSearchClick',
+    value: function _handleSearchSearchClick(event) {
       return !this.emit('search', event);
     }
 
@@ -64860,8 +64955,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleSelectAllClicked_',
-    value: function handleSelectAllClicked_(event) {
+    key: '_handleSelectAllClicked',
+    value: function _handleSelectAllClicked(event) {
       this.emit('selectAllClicked', event);
     }
 
@@ -64872,8 +64967,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleSelectPageCheckboxChanged_',
-    value: function handleSelectPageCheckboxChanged_(event) {
+    key: '_handleSelectPageCheckboxChanged',
+    value: function _handleSelectPageCheckboxChanged(event) {
       this.emit('selectPageCheckboxChanged', event);
     }
 
@@ -64883,8 +64978,8 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleSortingButtonClicked_',
-    value: function handleSortingButtonClicked_() {
+    key: '_handleSortingButtonClicked',
+    value: function _handleSortingButtonClicked() {
       this.emit('sortingButtonClicked', {
         sortingOrder: this.sortingOrder
       });
@@ -64897,10 +64992,10 @@ var ClayManagementToolbar = function (_Component) {
      */
 
   }, {
-    key: 'handleViewTypeClicked_',
-    value: function handleViewTypeClicked_(event) {
+    key: '_handleViewTypeClicked',
+    value: function _handleViewTypeClicked(event) {
       var element = event.delegateTarget;
-      var elementIndex = this.getDropdownItemIndex_(element);
+      var elementIndex = this._getDropdownItemIndex(element);
       var item = this.viewTypes[elementIndex];
 
       this.emit('viewTypeClicked', {
@@ -64920,6 +65015,16 @@ var ClayManagementToolbar = function (_Component) {
 
 ClayManagementToolbar.STATE = {
   /**
+   * Flag to indicate if search should be shown or not. This is for the
+   * hide/show interaction in small devices.
+   * @instance
+   * @memberof ClayManagementToolbar
+   * @type {?bool}
+   * @default false
+   */
+  _showSearchMobile: _metalState.Config.bool().internal().value(false),
+
+  /**
    * List of items to display in the actions menu on active state.
    * @instance
    * @memberof ClayManagementToolbar
@@ -64938,18 +65043,21 @@ ClayManagementToolbar.STATE = {
   contentRenderer: _metalState.Config.string(),
 
   /**
-   * Configuration of the plus button.
+   * Configuration of the creation menu.
+   * Set `true` to render a plain button that will emit an event onclick.
+   * Set `string` to use it as link href to render a link styled button.
+   * Set `object` to render a dropdown menu with items.
    * @instance
    * @memberof ClayManagementToolbar
-   * @type {?object|undefined}
+   * @type {?object|string|bool|undefined}
    * @default undefined
    */
-  creationMenu: _metalState.Config.shapeOf({
+  creationMenu: _metalState.Config.oneOfType([_metalState.Config.bool().value(false), _metalState.Config.string(), _metalState.Config.shapeOf({
     button: _metalState.Config.object(),
     caption: _metalState.Config.string(),
     helpText: _metalState.Config.string(),
     items: _validators.actionItemsValidator
-  }),
+  })]),
 
   /**
    * CSS classes to be applied to the element.
@@ -65035,23 +65143,31 @@ ClayManagementToolbar.STATE = {
   selectedItems: _metalState.Config.number(),
 
   /**
-   * Flag to indicate if search should be shown in or not. This is for the
-   * hide/show interaction in small devices.
+   * Flag to indicate if the Info button should be shown or not.
    * @instance
    * @memberof ClayManagementToolbar
    * @type {?bool}
    * @default false
    */
-  showSearch_: _metalState.Config.bool().internal().value(false),
+  showInfoButton: _metalState.Config.bool().value(false),
+
+  /**
+   * Flag to indicate if search should be shown or not.
+   * @instance
+   * @memberof ClayManagementToolbar
+   * @type {?bool}
+   * @default true
+   */
+  showSearch: _metalState.Config.bool().value(true),
 
   /**
    * Sorting order.
    * @instance
    * @memberof ClayManagementToolbar
    * @type {?string|undefined}
-   * @default asc
+   * @default undefined
    */
-  sortingOrder: _metalState.Config.oneOf(['asc', 'desc']).value('asc'),
+  sortingOrder: _metalState.Config.oneOf(['asc', 'desc']),
 
   /**
    * The path to the SVG spritemap file containing the icons.
@@ -65063,7 +65179,8 @@ ClayManagementToolbar.STATE = {
   spritemap: _metalState.Config.string().required(),
 
   /**
-   * Total number of items.
+   * Total number of items. If totalItems is 0 most of the elements in the bar
+   * will appear disabled.
    * @instance
    * @memberof ClayManagementToolbar
    * @type {?number|undefined}
